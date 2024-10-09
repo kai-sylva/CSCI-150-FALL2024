@@ -1,6 +1,6 @@
 ### Kai Rebich
 ### 10/08/2024
-### gamefunctions.py // will be CSCI-150-project
+### gamefunctions.py // will be CSCI150-project
 ### This file is a collection of various functions and project additions
 ### made throughout the course of CSCI 150
 
