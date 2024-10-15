@@ -16,7 +16,7 @@ quantityToPurchase = int(input("How many apples would you like to purchase? "))
 
 transaction = gamefunctions.purchase_item(0.99, startingMoney, quantityToPurchase)
 
-if len(transaction) > len(range(0,2)):
+if transaction[2] == True:
     print(f"\nSorry, you can only afford {transaction[0]} apples. Here they are and your change of ${transaction[1]:.2f}")
 else:
     print(f'\nAwesome, here are your {transaction[0]} apples and your change of ${transaction[1]:.2f}!')
