@@ -1,3 +1,21 @@
+"""Collection of functions created for CSCI-150 project.
+
+The various functions include...
+    purchase_item(): takes itemprice, startingmoney, and 
+    quantityToPurchase and returns tuple containing information on
+    transaction.
+
+    new_random_monster(): takes no arguments and returns dictionary
+    with a stats and description of a randomly generated monster.
+
+    print_welcome(): takes name (and optional width argument) and outputs
+    a centered welcome message.
+
+    print_shop_menu(): takes name and price of two items and prints a 
+    nicely formatted menu.
+
+"""
+
 ### Kai Rebich
 ### 10/08/2024
 ### gamefunctions.py // will be CSCI150-project
@@ -7,13 +25,16 @@
 import random
 
 def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
-    """ Returns a tuple containing the number of items purchased and leftover money.
+    """ Returns a tuple containing the number of items purchased and 
+    leftover money.
     Arguments:
     itemPrice -- float representing the price of the item
     startingMoney -- float representing the user's starting money
-    quantityToPurchase -- integer representing how many items are being purchased. Defaults to 1.
+    quantityToPurchase -- integer representing how many items are being 
+    purchased. Defaults to 1.
 
-    If user attempts to buy more items than they can afford, returns only what can be afforded.
+    If user attempts to buy more items than they can afford, returns only 
+    what can be afforded.
     """
 
     if quantityToPurchase == 0:
@@ -31,7 +52,9 @@ def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
 
 
 def new_random_monster():
-    """Returns a dictionary of a random monster with random health, power, and money attributes."""
+    """Returns a dictionary of a random monster with random health, power,
+    and money attributes.
+    """
 
     monster = {}
     # random number generator
@@ -69,7 +92,8 @@ def print_welcome(name="friend", width=20):
     print(f'{welcome:^{width}}')
 
 def print_shop_menu(item1Name, item1Price, item2Name, item2Price):
-    """Prints a nicely formatted shop menu with 2 items and respective prices.
+    """Prints a nicely formatted shop menu with 2 items and 
+    respective prices.
     Arguments, in order:
     item1Name -- string representing item 1's name
     item1Price -- integer or float representing item 2's price
@@ -85,29 +109,30 @@ def print_shop_menu(item1Name, item1Price, item2Name, item2Price):
     print(f'\\{border_dashes}/')
 
     
+def test_functions():
+    # testing purchase_item() function
+    print(purchase_item(2.90, 10.0, 2)) # should return 2 items purchased and $4.20 change returned
+    print(purchase_item(2.99, 10.0, 5)) # should return 3 items purchased b/c 5 can't be afforded
+    print(purchase_item(5.99, 10.0)) # should return 1 item purchased b/c default quantityToPurchase is 1
+    print(purchase_item(5.99, 10.0, 0)) # should return 1 again, b/c default quantityToPurchase is 1
+
+    # testing new_random_monster() function
+    my_monster1 = new_random_monster()
+    my_monster2 = new_random_monster()
+    my_monster3 = new_random_monster()
+    print(f"Monster 1: {my_monster1['name']}, Power: {my_monster1['power']}, Description: {my_monster1['description']}")
+    print(f"Monster 2: {my_monster2['name']}, Power: {my_monster2['power']}, Money: {my_monster2['money']}")
+    print(f"Monster 3: {my_monster3['name']}, Power: {my_monster3['power']}, Health: {my_monster3['health']}")
+
+    #testing print_welcome() -- one test for no input
+    print_welcome("kai")
+    print_welcome("Gary")
+    print_welcome()
+
+    print_shop_menu("Apple", 1000, "Banana", 2)
+    print_shop_menu("Sourdough", 5.99, "Flour", 6.4)
+    print_shop_menu("Tomato", 1.99, "Ketchup", 17)
 
 
-# testing purchase_item() function
-print(purchase_item(2.90, 10.0, 2)) # should return 2 items purchased and $4.20 change returned
-print(purchase_item(2.99, 10.0, 5)) # should return 3 items purchased b/c 5 can't be afforded
-print(purchase_item(5.99, 10.0)) # should return 1 item purchased b/c default quantityToPurchase is 1
-print(purchase_item(5.99, 10.0, 0)) # should return 1 again, b/c default quantityToPurchase is 1
-
-# testing new_random_monster() function
-my_monster1 = new_random_monster()
-my_monster2 = new_random_monster()
-my_monster3 = new_random_monster()
-print(f"Monster 1: {my_monster1['name']}, Power: {my_monster1['power']}, Description: {my_monster1['description']}")
-print(f"Monster 2: {my_monster2['name']}, Power: {my_monster2['power']}, Money: {my_monster2['money']}")
-print(f"Monster 3: {my_monster3['name']}, Power: {my_monster3['power']}, Health: {my_monster3['health']}")
-
-#testing print_welcome() -- one test for no input
-print_welcome("kai")
-print_welcome("Gary")
-print_welcome()
-
-print_shop_menu("Apple", 1000, "Banana", 2)
-print_shop_menu("Sourdough", 5.99, "Flour", 6.4)
-print_shop_menu("Tomato", 1.99, "Ketchup", 17)
-
-print("testing change to file in remote repository")
+if __name__ == "__main__":
+    test_functions()
