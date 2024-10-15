@@ -25,8 +25,9 @@ The various functions include...
 import random
 
 def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
-    """ Returns a tuple containing the number of items purchased and 
-    leftover money.
+    """ Returns a tuple containing the number of items purchased, 
+    leftover money, and boolean notEnoughMoney indicating whether the user
+    had enough money for the transaction.
     Arguments:
     itemPrice -- float representing the price of the item
     startingMoney -- float representing the user's starting money
@@ -49,7 +50,8 @@ def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
     # otherwise good to go
     else:
         leftoverMoney = round((startingMoney - (quantityToPurchase * itemPrice)), 2)
-        return int(quantityToPurchase), leftoverMoney
+        notEnoughMoney = False
+        return int(quantityToPurchase), leftoverMoney, notEnoughMoney
 
 
 def new_random_monster():
