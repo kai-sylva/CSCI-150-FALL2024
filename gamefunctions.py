@@ -18,7 +18,7 @@ The various functions include...
 
 ### Kai Rebich
 ### 10/08/2024
-### gamefunctions.py // will be CSCI150-project
+### gamefunctions.py
 ### This file is a collection of various functions and project additions
 ### made throughout the course of CSCI 150
 
@@ -44,7 +44,8 @@ def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
     if (quantityToPurchase * itemPrice) > startingMoney: 
         quantity_purchased = startingMoney // itemPrice
         leftoverMoney = round((startingMoney % itemPrice), 2)
-        return int(quantity_purchased), leftoverMoney
+        notEnoughMoney = True
+        return int(quantity_purchased), leftoverMoney, notEnoughMoney
     # otherwise good to go
     else:
         leftoverMoney = round((startingMoney - (quantityToPurchase * itemPrice)), 2)
@@ -61,19 +62,19 @@ def new_random_monster():
     randomNumber = random.randint(1, 3) 
 
     if randomNumber == 1:
-        monster['name'] = "A goblin"
+        monster['name'] = "goblin"
         monster['description'] = "This is a lone goblin. When it notices you, it rushes at you quickly with a dagger that could be mistaken for a butter knife."
         monster['health'] = random.randint(5, 12)
         monster['power'] = random.randint(1, 5)
         monster['money'] = random.randint(1, 50)
     elif randomNumber == 2:
-        monster['name'] = "A dragon"
+        monster['name'] = "dragon"
         monster['description'] = "You hear the terrible cry of a hungry dragon emerging from a nearby cave. Good luck."
         monster['health'] = random.randint(5000, 20000)
         monster['power'] = random.randint(125, 250)
         monster['money'] = random.randint(3000, 12000)
     elif randomNumber == 3:
-        monster['name'] = "A frost troll"
+        monster['name'] = "frost troll"
         monster['description'] = "As you continue your quest to find treasure at the top of a mountain with eternal blizzards you encounter a frost troll guarding a suspicious chest."
         monster['health'] = random.randint(2000, 3000)
         monster['power'] = random.randint(50, 80)
