@@ -28,14 +28,21 @@ def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
     """ Returns a tuple containing the number of items purchased, 
     leftover money, and boolean notEnoughMoney indicating whether the user
     had enough money for the transaction.
-    Arguments:
-    itemPrice -- float representing the price of the item
-    startingMoney -- float representing the user's starting money
-    quantityToPurchase -- integer representing how many items are being 
+
+    Parameters:
+    itemPrice (float) -- represents price of the item
+    startingMoney (float) -- represents the user's starting money
+    quantityToPurchase (int) -- represents how many items are being 
     purchased. Defaults to 1.
 
-    If user attempts to buy more items than they can afford, returns only 
-    what can be afforded.
+    Returns: tuple (
+        quantity_purchased (int),
+        leftoverMoney (float),
+        notEnoughMoney (boolean) -- true if cannot afford, false otherwise
+    )
+
+    Note: if attempting to buy more than user can afford, returns the max
+    quantity they can afford.
     """
 
     if quantityToPurchase == 0:
@@ -57,6 +64,15 @@ def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
 def new_random_monster():
     """Returns a dictionary of a random monster with random health, power,
     and money attributes.
+
+    Parameters: none
+
+    Returns: dictionary {
+    'name':(str)
+    'health':(int)
+    'power':(int)
+    'money':(int)
+    }
     """
 
     monster = {}
@@ -65,19 +81,23 @@ def new_random_monster():
 
     if randomNumber == 1:
         monster['name'] = "goblin"
-        monster['description'] = "This is a lone goblin. When it notices you, it rushes at you quickly with a dagger that could be mistaken for a butter knife."
+        monster['description'] = """This is a lone goblin. When it notices you,"
+it rushes at you quickly with a dagger that could be mistaken for a butter knife."""
         monster['health'] = random.randint(5, 12)
         monster['power'] = random.randint(1, 5)
         monster['money'] = random.randint(1, 50)
     elif randomNumber == 2:
         monster['name'] = "dragon"
-        monster['description'] = "You hear the terrible cry of a hungry dragon emerging from a nearby cave. Good luck."
+        monster['description'] = """You hear the terrible cry of a hungry dragon 
+emerging from a nearby cave. Good luck."""
         monster['health'] = random.randint(5000, 20000)
         monster['power'] = random.randint(125, 250)
         monster['money'] = random.randint(3000, 12000)
     elif randomNumber == 3:
         monster['name'] = "frost troll"
-        monster['description'] = "As you continue your quest to find treasure at the top of a mountain with eternal blizzards you encounter a frost troll guarding a suspicious chest."
+        monster['description'] = """As you continue your quest to find treasure at
+the top of a mountain with eternal blizzards you encounter 
+a frost troll guarding a suspicious chest."""
         monster['health'] = random.randint(2000, 3000)
         monster['power'] = random.randint(50, 80)
         monster['money'] = random.randint(5000, 7000)
@@ -85,11 +105,13 @@ def new_random_monster():
 
 def print_welcome(name="friend", width=20):
     """Prints a centered welcome message
-    Arguments:
-    name -- string representing the person being welcomed
+    Parameters:
+    name (str) -- string representing the person being welcomed
     
-    Optional keyword arguments:
-    width -- integer defaulting to 20, represents width of output string
+    Optional keyword parameter:
+    width (int) -- defaults to 20, represents width of output string
+
+    Returns: None
     """
     welcome = f'Hello {name}!'
     print(f'{welcome:^{width}}')
@@ -97,11 +119,14 @@ def print_welcome(name="friend", width=20):
 def print_shop_menu(item1Name, item1Price, item2Name, item2Price):
     """Prints a nicely formatted shop menu with 2 items and 
     respective prices.
-    Arguments, in order:
-    item1Name -- string representing item 1's name
-    item1Price -- integer or float representing item 2's price
-    item2Name -- string representing item 2's name
-    item2Price -- integer or float representing item 2's price
+
+    Parameters, in order:
+    item1Name (str) -- represents item 1's name
+    item1Price (int or float) -- represents item 2's price
+    item2Name (str) -- represents item 2's name
+    item2Price (int or float) -- represents item 2's price
+
+    Returns: None
     """
     border_dashes = "-" * 22
     item1Price = f'${item1Price:.2f}'
@@ -113,11 +138,21 @@ def print_shop_menu(item1Name, item1Price, item2Name, item2Price):
 
     
 def test_functions():
-    # testing purchase_item() function
-    print(purchase_item(2.90, 10.0, 2)) # should return 2 items purchased and $4.20 change returned
-    print(purchase_item(2.99, 10.0, 5)) # should return 3 items purchased b/c 5 can't be afforded
-    print(purchase_item(5.99, 10.0)) # should return 1 item purchased b/c default quantityToPurchase is 1
-    print(purchase_item(5.99, 10.0, 0)) # should return 1 again, b/c default quantityToPurchase is 1
+    """test code to run if __name__ == __main__, each function runs 3x min
+    
+    Parameters: none
+
+    Returns: None
+    """
+
+    # should return 2 items purchased and $4.20 change returned
+    print(purchase_item(2.90, 10.0, 2))
+    # should return 3 items purchased b/c 5 can't be afforded
+    print(purchase_item(2.99, 10.0, 5))
+    # should return 1 item purchased b/c default quantityToPurchase is 1
+    print(purchase_item(5.99, 10.0)) 
+    # should return 1 again, b/c default quantityToPurchase is 1
+    print(purchase_item(5.99, 10.0, 0))
 
     # testing new_random_monster() function
     my_monster1 = new_random_monster()
