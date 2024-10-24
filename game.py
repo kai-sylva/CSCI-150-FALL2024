@@ -5,6 +5,7 @@
 
 import gamefunctions
 import time
+import random
 
 # Get user's name, print welcome
 user_name = input("What is your name? ")
@@ -30,9 +31,11 @@ elif item == "strawberries":
 
 # Take additional user inputs for transaction
 quantityToPurchase = int(input(f"How many {item} would you like to purchase? "))
+# FIXME consider adding a condition for if they input 0 items to purchase
 startingMoney = int(input("How much money do you have? "))
 
 transaction = gamefunctions.purchase_item(itemPrice, startingMoney, quantityToPurchase)
+currentMoney = transaction[1]
 
 # Check if user can afford what they want
 if transaction[2] == True:
@@ -57,11 +60,35 @@ print(".", end='', flush=True)
 time.sleep(2)
 
 # User encounters monster. Display stats and a message.
-print(f"""\n**You've encountered the {monster['name']}!**
+print(f"""\n**You've encountered the {monster['name']}!**""")
 
-{'Stats':-^25}
-{'Money:':<7}{'$'+str(monster['money']):>18} 
-{'Health:':<7}{monster['health']:>18} 
-{'Power:':<7}{monster['power']:>18}
-""")
-print("**Choose your next action wisely**")
+currentHP = 100
+gamefunctions.displayFightStats(monster, currentMoney, currentHP)
+gamefunctions.getUserFightOptions(True)
+user_action = input("\nChoose your next action wisely. ")
+
+#FIXME -- what if the user dies?
+while user_action not in ['3','4']:
+    fight_results = gamefunctions.fightScenarios(monster, currentHP, currentMoney, user_action)
+    if 'input_invalid' in fight_results:
+        user_action = input("Invalid option, please try again. ")
+        continue
+    monster['health'] = fight_results['monster_health']
+    currentHP = fight_results['currentHP']
+    currentMoney = fight_results['currentMoney']
+    if monster['health'] <= 0:
+        user_action = '4'
+        break
+    gamefunctions.displayFightStats(monster, currentMoney, currentHP)
+    gamefunctions.getUserFightOptions(False)
+    if currentHP <=25:
+        print("\nWarning! HP at or below 25, sleep soon or run away!")
+    user_action = input("\nChoose your next action... ")
+
+# FIXME -- should I move the following code to gamefunctions?? idk
+if user_action == "3":
+    print("\nCoward. You ran away!")
+elif user_action == "4":
+    print(f"\nCongratulations! You have slain the {monster['name']}")
+    currentMoney += monster['money']
+    print(f"You now have ${currentMoney:.2f}")
