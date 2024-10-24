@@ -23,6 +23,7 @@ The various functions include...
 ### made throughout the course of CSCI 150
 
 import random
+import time
 
 def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
     """ Returns a tuple containing the number of items purchased, 
@@ -103,6 +104,83 @@ a frost troll guarding a suspicious chest."""
         monster['money'] = random.randint(5000, 7000)
     return monster
 
+def displayFightStats(monsterStats, currentMoney, currentHP=100):
+    """ Prints a formatted summary of the current fight statistics between user and
+    a monster. 
+
+    Parameters:
+        monsterStats (dict) {
+            'name':(str)
+            'money':(int)
+            'health':(int)
+            'power':(int)
+        }
+        currentMoney (int) - represents user's current money
+        currentHP (int) - represents user's current health points
+    
+    Returns: None
+    """
+    currentMoney_output = f'{currentMoney:.2f}'
+    currentMoney_output = str(currentMoney_output)
+    print(f"""
+{monsterStats['name'].title()+' Stats':-^25}{'Your Stats':-^25}
+{'Money:':<7}{'$'+str(monsterStats['money']):>18} {'Money:':<7}{'$'+currentMoney_output:>18}
+{'HP:':<7}{monsterStats['health']:>18} {'HP:':<7}{currentHP:>18}
+{'Power:':<7}{monsterStats['power']:>18}
+""")
+
+
+def getUserFightOptions(startingFight):
+    """FIXME add docstring
+    """
+    if startingFight == True:
+        print("1) Fight Monster")
+        print("2) Sleep (restore 10 HP for $5)")
+        print("3) Quit (run away)")
+        print("4) (Cheat) Instantly slay the monster")
+    elif startingFight == False:
+        print("1) Continue Fighting")
+        print("2) Sleep (restore 10 HP for $5)")
+        print("3) Quit (run away)")
+        print("4) (Cheat) Instantly slay the monster")
+
+def fightScenarios(monster, currentHP, currentMoney, user_action='0'): 
+    """FIXME -- finish docstring
+    Function holding the outputs and stuff from game.py  
+    returns : monster health, currentHP, currentMoney, new user action  
+    """
+    scenario_results = {
+        'currentHP': currentHP,
+        'currentMoney': currentMoney,
+        'monster_health': monster['health']
+        }
+
+    if user_action not in ['1','2']:
+        scenario_results['input_invalid'] = True
+        return scenario_results
+    elif user_action == '1':
+        print(f"\n**You chose to fight the {monster['name']}!**")
+        time.sleep(1)
+        if monster['health'] <= 5:
+            damage_dealt = 5
+        else:
+            damage_dealt = random.randint(0, monster['health'])
+        scenario_results['monster_health'] -= damage_dealt
+
+        damage_received = random.randint(1, 25)
+        scenario_results['currentHP'] -= damage_received
+    elif user_action == '2':
+        if currentMoney >= 5:
+            print("\n**You chose to sleep and restored 10 HP!**")
+            time.sleep(1)
+            scenario_results['currentHP'] += 10
+            scenario_results['currentMoney'] -= 5
+            time.sleep(1)
+        else:
+            print("\n**You don't have enough money to do that.**")
+            time.sleep(1)
+    return scenario_results
+
 def print_welcome(name="friend", width=20):
     """Prints a centered welcome message
     Parameters:
@@ -143,6 +221,9 @@ def test_functions():
     Parameters: none
 
     Returns: None
+
+    FIXME -- add test code for fightScenarios, getUserFightOptions and
+    displayFightStatistics
     """
 
     # should return 2 items purchased and $4.20 change returned
