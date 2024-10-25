@@ -8,22 +8,45 @@ The various functions include...
     new_random_monster(): takes no arguments and returns dictionary
     with a stats and description of a randomly generated monster.
 
+    fightMonster(): Takes user stats and monster stats and allows user to attack
+    the monster, drink health potions, run away, or cheat and instantly slay 
+    the monster.
+
+    displayFightStats(): Prints a formatted summary of the current fight 
+    statistics between user anda monster. 
+
+    drinkHealthPotion(): Takes user's stats from a dictionary and adds 75 HP
+    if user possesses at least 1 health potion.
+
     print_welcome(): takes name (and optional width argument) and outputs
     a centered welcome message.
 
-    print_shop_menu(): takes name and price of two items and prints a 
-    nicely formatted menu.
+    print_shop_menu(): takes dictionary of shop items (keys) and prices (values)
+    and prints a formatted menu.
+
+    getUserStats(): Prints formatted menu of current player stats.
+
+    buyShopItems(): Takes user's stats and dictionary of shop items and allows
+    user to purchase items from the shop.
+
+    sleep(): User "sleeps" and restores 10 HP. Can be used as a way to restore
+    HP when user has no health potions or money to buy health potions. 
+    Can only be done outside of a fight.
+
+    getUserGameOptions(): Prints a menu of game options for user to choose from.
+    Main navigation, 'q' to quit.
 
 """
 
+# FIXME's -- move 'attack' to own function? 
+
 ### Kai Rebich
-### 10/08/2024
+### 10/24/2024
 ### gamefunctions.py
 ### This file is a collection of various functions and project additions
 ### made throughout the course of CSCI 150
 
 import random
-import time
 
 def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
     """ Returns a tuple containing the number of items purchased, 
@@ -31,14 +54,14 @@ def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
     had enough money for the transaction.
 
     Parameters:
-    itemPrice (float) -- represents price of the item
-    startingMoney (float) -- represents the user's starting money
+    itemPrice (int) -- represents price of the item
+    startingMoney (int) -- represents the user's starting money
     quantityToPurchase (int) -- represents how many items are being 
     purchased. Defaults to 1.
 
     Returns: tuple (
         quantity_purchased (int),
-        leftoverMoney (float),
+        leftoverMoney (int),
         notEnoughMoney (boolean) -- true if cannot afford, false otherwise
     )
 
@@ -104,82 +127,155 @@ a frost troll guarding a suspicious chest."""
         monster['money'] = random.randint(5000, 7000)
     return monster
 
-def displayFightStats(monsterStats, currentMoney, currentHP=100):
-    """ Prints a formatted summary of the current fight statistics between user and
-    a monster. 
+def fightMonster(user_stats_dict, monster={}):
+    """Takes user stats and monster stats and allows user to attack the monster,
+    drink health potions, run away, or cheat and instantly slay the monster.
+    THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS.
 
     Parameters:
-        monsterStats (dict) {
-            'name':(str)
-            'money':(int)
-            'health':(int)
-            'power':(int)
-        }
-        currentMoney (int) - represents user's current money
-        currentHP (int) - represents user's current health points
+        user_stats_dict (dict): Dictionary containing user stats.
+        monster (dict): Dictionary containing monster stats. If no value is
+            passed, a random monster is generated.
+    
+    Returns: None
+
+    Special Notes:
+        User Actions:
+            1) "Attack": User attacks monster, dealing damage and receiving
+            damage. Damage dealt is random, unless monster's health is at or
+            below 5 HP, at which point user deals 5 damage and slays monster. If 
+            user's HP falls to 0 during the fight, they are forced to abandon 
+            the fight and told to regenerate HP.
+            2) "Drink health potion": User drinks health potion (calls
+            drinkHealthPotion() function) and restores 75 HP.
+            3) "Run Away": User runs away and abandons fight.
+            4) "(Cheat) Instantly slay monster": Self explanatory.
+
+            If or when user slays monster, they are rewarded the monster's
+            stash of gold.
+        Parameters altered:
+            user_stats_dict: ['currentHP'] ['health_potions'] ['currentMoney']
+            monster: ['health']
+
+    """
+
+    # if monster stats not passed in, create new random monster
+    if len(monster) == 0:
+        monster = new_random_monster()
+    
+    print(f"You've encountered a {monster['name']}!")
+    displayFightStats(user_stats_dict, monster)
+
+    quit_fight = False
+    while quit_fight == False:
+        getUserFightOptions(user_stats_dict, monster)
+        user_action = input("Choose your action: ")
+        print("")
+        # FIXME -- move 'Attack' to own function?
+        if user_action == '1':
+            print("You chose to fight!\n")
+
+            # Slay monster if health at or below 5 HP
+            if monster['health'] <= 5:
+                damage_dealt = monster['health']
+            else:
+                damage_dealt = random.randint(0, monster['health'])
+            monster['health'] -= damage_dealt
+
+            # If user's HP is <= damage received, damage_received is equal
+            # to user's HP.
+            damage_received = random.randint(1, 25)
+            if user_stats_dict['currentHP'] <= damage_received:
+                damage_received = user_stats_dict['currentHP']
+                user_stats_dict['currentHP'] -= damage_received
+            else:
+                user_stats_dict['currentHP'] -= damage_received
+            print(f"Damage dealt: {damage_dealt}")
+            print(f"Damage Received: {damage_received}")
+            displayFightStats(user_stats_dict, monster)
+
+            # If user slays monster, print messages, add gold to user_stats_dict
+            # and quit fight.
+            if monster['health'] == 0:
+                print(f"You have slain the {monster['name']}!")
+                print(f"Gold acquired: {monster['money']}")
+                user_stats_dict['currentMoney'] += monster['money']
+                getUserStats(user_stats_dict)
+                quit_fight = True
+            # If user HP reaches 0 and monster still has HP, force user
+            # to abandon fight.
+            elif user_stats_dict['currentHP'] == 0:
+                print("Your HP has fallen to 0 and you have been defeated.")
+                print("You must run away and sleep to regenerate health.\n")
+                quit_fight = True
+        
+        if user_action == '2':
+            drinkHealthPotion(user_stats_dict)
+            displayFightStats(user_stats_dict, monster)
+        if user_action == '3':
+            print("You ran away!")
+            getUserStats(user_stats_dict)
+            quit_fight = True
+
+        # If user cheats, give same messages and gold as if they killed monster
+        # by their own hands.
+        if user_action == '4':
+            print(f"You have slain the {monster['name']}!")
+            print(f"Gold acquired: {monster['money']}")
+            user_stats_dict['currentMoney'] += monster['money']
+            getUserStats(user_stats_dict)
+            quit_fight = True
+
+def getUserFightOptions(user_stats_dict, monster):
+    """Prints a list of options for user to choose from when fighting a monster.
+    Mutable parameters are NOT altered.
+
+    Parameters: 
+        user_stats_dict (dict): Dictionary containing user stats
+        monster (dict): Dictionary contianing monster stats
+
+    Returns: None
+    """
+    print("1) Attack")
+    print(f"2) Drink health potion ({user_stats_dict['health_potions']} remaining)")
+    print("3) Run away")
+    print(f"4) (Cheat) Instantly slay the {monster['name']}")
+
+def displayFightStats(user_stats_dict, monster):
+    """Prints a formatted summary of the current fight statistics between user and
+    a monster. Mutable parameters are NOT altered.
+
+    Parameters:
+        user_stats_dict (dict): Dictionary containing user stats
+        monster (dict): Dictionary containing monster stats
     
     Returns: None
     """
-    currentMoney_output = f'{currentMoney:.2f}'
-    currentMoney_output = str(currentMoney_output)
+
     print(f"""
-{monsterStats['name'].title()+' Stats':-^25}{'Your Stats':-^25}
-{'Money:':<7}{'$'+str(monsterStats['money']):>18} {'Money:':<7}{'$'+currentMoney_output:>18}
-{'HP:':<7}{monsterStats['health']:>18} {'HP:':<7}{currentHP:>18}
-{'Power:':<7}{monsterStats['power']:>18}
+{monster['name'].title()+' Stats':-^25} {'Your Stats':-^25}
+{'Gold:':<7}{str(monster['money']):>18} {'Gold:':<7}{user_stats_dict['currentMoney']:>18}
+{'HP:':<7}{monster['health']:>18} {'HP:':<7}{user_stats_dict['currentHP']:>18}
+{'Power:':<7}{monster['power']:>18}
 """)
 
+def drinkHealthPotion(user_stats_dict):
+    """Takes user stats and checks for valid number of health potions. If user 
+    has health potions, restores 75 HP and subtracts 1 health potion. 
+    THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS.
 
-def getUserFightOptions(startingFight):
-    """FIXME add docstring
+    Parameters:
+        user_stats_dict (dict): Dictionary containing user stats.
+    
+    Returns: None
     """
-    if startingFight == True:
-        print("1) Fight Monster")
-        print("2) Sleep (restore 10 HP for $5)")
-        print("3) Quit (run away)")
-        print("4) (Cheat) Instantly slay the monster")
-    elif startingFight == False:
-        print("1) Continue Fighting")
-        print("2) Sleep (restore 10 HP for $5)")
-        print("3) Quit (run away)")
-        print("4) (Cheat) Instantly slay the monster")
-
-def fightScenarios(monster, currentHP, currentMoney, user_action='0'): 
-    """FIXME -- finish docstring
-    Function holding the outputs and stuff from game.py  
-    returns : monster health, currentHP, currentMoney, new user action  
-    """
-    scenario_results = {
-        'currentHP': currentHP,
-        'currentMoney': currentMoney,
-        'monster_health': monster['health']
-        }
-
-    if user_action not in ['1','2']:
-        scenario_results['input_invalid'] = True
-        return scenario_results
-    elif user_action == '1':
-        print(f"\n**You chose to fight the {monster['name']}!**")
-        time.sleep(1)
-        if monster['health'] <= 5:
-            damage_dealt = 5
-        else:
-            damage_dealt = random.randint(0, monster['health'])
-        scenario_results['monster_health'] -= damage_dealt
-
-        damage_received = random.randint(1, 25)
-        scenario_results['currentHP'] -= damage_received
-    elif user_action == '2':
-        if currentMoney >= 5:
-            print("\n**You chose to sleep and restored 10 HP!**")
-            time.sleep(1)
-            scenario_results['currentHP'] += 10
-            scenario_results['currentMoney'] -= 5
-            time.sleep(1)
-        else:
-            print("\n**You don't have enough money to do that.**")
-            time.sleep(1)
-    return scenario_results
+    if user_stats_dict['health_potions'] > 0:
+        user_stats_dict['health_potions'] -= 1
+        user_stats_dict['currentHP'] += 75
+        print(f"75 HP Restored!")
+        print(f"Health potions remaining: {user_stats_dict['health_potions']}\n")
+    else:
+        print("No health potions remaining\n")
 
 def print_welcome(name="friend", width=20):
     """Prints a centered welcome message
@@ -194,25 +290,139 @@ def print_welcome(name="friend", width=20):
     welcome = f'Hello {name}!'
     print(f'{welcome:^{width}}')
 
-def print_shop_menu(item1Name, item1Price, item2Name, item2Price):
-    """Prints a nicely formatted shop menu with 2 items and 
-    respective prices.
+def print_shop_menu(shop_items_dict):
+    """Takes a dictionary of shop items and prints a nicely formatted shop menu 
+    with item names and respective prices. 
+    Mutable parameters are NOT altered.
 
-    Parameters, in order:
-    item1Name (str) -- represents item 1's name
-    item1Price (int or float) -- represents item 2's price
-    item2Name (str) -- represents item 2's name
-    item2Price (int or float) -- represents item 2's price
+    Parameters:
+        shop_items_dict (dict): Dictionary containing shop items (keys) and
+        item prices (values)
+
+    Returns: None
+
+    Notes:
+        Item names are currently limited to 15 characters. Providing more than
+        15 characters will break the menu formatting.
+    """
+    border_dashes = "-" * 25
+    print(f'/{border_dashes}\\')
+    print(f'{"| Item":<15}{"Price":>10} |')
+    print(f'|{border_dashes}|')
+    for item, price in shop_items_dict.items():
+        print(f'| {item.title():<15}{price:>8} |')
+    print(f'\\{border_dashes}/')
+
+def getUserStats(user_stats_dict):
+    """Prints formatted menu of current player stats.
+    Mutable parameters are NOT altered.
+
+    Parameters:
+        user_stats_dict (dict) -- dictionary containing various user stats
+            ['user_name']: User's name
+            ['currentHP']: User's current HP
+            ['currentMoney']: User's current gold inventory
+            ['health_potions']: User's current health potion inventory
+    
+    Returns: None
+
+    """
+    print(f"""
+{'Stats':-^25}
+{'Name:':<7}{user_stats_dict['user_name']:>18}
+{'HP:':<7}{user_stats_dict['currentHP']:>18}
+{'Gold:':<7}{user_stats_dict['currentMoney']:>18}
+{'Health Potions:':<15}{user_stats_dict['health_potions']:>10}
+""")
+
+def buyShopItems(user_stats_dict, shop_items_dict):
+    """Takes user stats and shop items and prints a shop menu from which the
+    user can choose to buy an item. 
+    THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS.
+
+    Parameters:
+        user_stats_dict (dict): Dictionary containing user's stats.
+        shop_items_dict (dict): Dictionary containing shop items (keys) and 
+        prices (values).
+    
+    Returns: None
+
+    Notes:
+        This function currently only allows the health potions to be added to
+        the user's inventory. Attempting to buy any other items will simply
+        result in a donation to the shop.
+    
+    """
+
+    # Welcome user and print shop menu with the items in shop_items_dict
+    print(f"Hello, {user_stats_dict['user_name']}! Check out our current items!\n")
+    print_shop_menu(shop_items_dict)
+    # Display user's current gold inventory
+    print(f"\nGold: {user_stats_dict['currentMoney']}")
+
+    quit_interact = False
+    while quit_interact == False:
+        item = input("What would you like to buy?('q' to leave) ")
+        if item == 'q':
+            print("")
+            quit_interact = True
+        elif item not in shop_items_dict:
+            print("Invalid option, please try again")
+            continue
+        elif item in shop_items_dict:
+            # Get input on quantity to purchase
+            quantityToPurchase = int(input(f'Quantity of {item} to purchase: '))
+            # Pass transaction info into purchase_item
+            transaction = purchase_item(shop_items_dict[item], user_stats_dict['currentMoney'], quantityToPurchase)
+            # Update user's remaining gold inventory
+            user_stats_dict['currentMoney'] = transaction[1]
+
+            # FIXME-(fix @ later date) allow more items to be added to inventory
+            # Update user's health potion inventory (if purchased)
+            if item == "health potion":
+                user_stats_dict['health_potions'] += transaction[0]
+            # Check if they had enough gold for quantityToPurchase and
+            # print receipt of transaction
+            if transaction[2] == True:
+                print(f"""\nOops, you can only afford {transaction[0]} {item}. 
+\nQuantity purchased: {transaction[0]}
+Remaining gold: {transaction[1]}""")
+            else:
+                print(f"""\nQuantity purchased: {transaction[0]}
+Remaining gold: {transaction[1]}""")
+                
+def sleep(user_stats_dict):
+    """Takes user stats and adds 10 HP.
+    THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS.
+
+    Parameters:
+        user_stats_dict (dict): Dictionary containing user stats.
+    
+    Returns: None
+
+    Notes:
+        To curb player abusing sleep() while still allowing them to play if they
+        are defeated during a fight and have no health potions, sleep() only
+        restores 10 HP per instance. 
+    """
+    
+    user_stats_dict['currentHP'] += 10
+    print("\nYou chose to sleep and restore 10HP.")
+    print(f"Current HP: {user_stats_dict['currentHP']}\n")
+
+def getUserGameOptions():
+    """Prints a simple menu of game options to the user. 
+
+    Parameters: none
 
     Returns: None
     """
-    border_dashes = "-" * 22
-    item1Price = f'${item1Price:.2f}'
-    item2Price = f'${item2Price:.2f}'
-    print(f'/{border_dashes}\\')
-    print(f'| {item1Name:<12}{item1Price:>8} |')
-    print(f'| {item2Name:<12}{item2Price:>8} |')
-    print(f'\\{border_dashes}/')
+    print("1) Enter shop")
+    print("2) Fight monster")
+    print("3) Sleep (Restore 10HP for 5 gold)")
+    print("4) Drink Health Potion (Restore 75 HP)")
+    print("5) Display stats")
+    print("q) Quit game")
 
     
 def test_functions():
@@ -222,10 +432,14 @@ def test_functions():
 
     Returns: None
 
-    FIXME -- add test code for fightScenarios, getUserFightOptions and
-    displayFightStatistics
     """
 
+    user_stats = {
+        'user_name': 'kai',
+        'currentHP': 100,
+        'currentMoney': 250,
+        'health_potions': 1
+    }
     # should return 2 items purchased and $4.20 change returned
     print(purchase_item(2.90, 10.0, 2))
     # should return 3 items purchased b/c 5 can't be afforded
@@ -248,9 +462,29 @@ def test_functions():
     print_welcome("Gary")
     print_welcome()
 
-    print_shop_menu("Apple", 1000, "Banana", 2)
-    print_shop_menu("Sourdough", 5.99, "Flour", 6.4)
-    print_shop_menu("Tomato", 1.99, "Ketchup", 17)
+    # Testing getUserGameOptions()
+    getUserGameOptions()
+
+    # Testing displayFightStats
+    displayFightStats(user_stats, my_monster1)
+
+    # Testing sleep()
+    sleep(user_stats)
+
+    # Testing drinkHealthPotion()
+    drinkHealthPotion(user_stats)
+
+    shop_items_1 = {"Apple": 1000, "Banana": 2, "Raspberries": 4}
+    shop_items_2 = {"Sourdough": 6, "Flour": 7}
+    shop_items_3 = {"Tomato": 2, "Ketchup": 17}
+    print_shop_menu(shop_items_1)
+    print_shop_menu(shop_items_2)
+    print_shop_menu(shop_items_3)
+
+    getUserStats(user_stats)
+    buyShopItems(user_stats, shop_items_1)
+    fightMonster(user_stats)
+
 
 
 if __name__ == "__main__":
