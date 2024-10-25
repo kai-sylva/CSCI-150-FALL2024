@@ -1,5 +1,5 @@
 #Kai Rebich - game.py
-#10/24/2024 - CSCI 150
+#10/25/2024 - CSCI 150
 #This file is a simulation of a simple game using the
 #functions imported from gamefunctions.py
 
@@ -48,7 +48,7 @@ while quit_game == False:
     elif user_action == 'q':
         quit_game = True
     else:
-        print("Invalid option, please try again")
+        print("Invalid option, please try again\n")
 
 if quit_game == True:
     print(f"Thanks for playing, {user_name}!")

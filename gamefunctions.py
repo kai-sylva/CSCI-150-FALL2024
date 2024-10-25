@@ -12,6 +12,11 @@ The various functions include...
     the monster, drink health potions, run away, or cheat and instantly slay 
     the monster.
 
+    attackMonster(): Generates random damage values (both dealt and received)
+    and adjusts user stats and monster stats accordingly. User can cheat and
+    instantly slay monster to acquire its gold. Takes user stats, monster stats,
+    and cheat boolean as parameters.
+
     displayFightStats(): Prints a formatted summary of the current fight 
     statistics between user anda monster. 
 
@@ -38,10 +43,8 @@ The various functions include...
 
 """
 
-# FIXME's -- move 'attack' to own function? 
-
 ### Kai Rebich
-### 10/24/2024
+### 10/25/2024
 ### gamefunctions.py
 ### This file is a collection of various functions and project additions
 ### made throughout the course of CSCI 150
@@ -142,27 +145,21 @@ def fightMonster(user_stats_dict, monster={}):
     Special Notes:
         User Actions:
             1) "Attack": User attacks monster, dealing damage and receiving
-            damage. Damage dealt is random, unless monster's health is at or
-            below 5 HP, at which point user deals 5 damage and slays monster. If 
-            user's HP falls to 0 during the fight, they are forced to abandon 
-            the fight and told to regenerate HP.
+            damage. Calls attackMonster() function.
             2) "Drink health potion": User drinks health potion (calls
             drinkHealthPotion() function) and restores 75 HP.
             3) "Run Away": User runs away and abandons fight.
-            4) "(Cheat) Instantly slay monster": Self explanatory.
+            4) "(Cheat) Instantly slay monster": User slays monster for free.
 
             If or when user slays monster, they are rewarded the monster's
             stash of gold.
         Parameters altered:
             user_stats_dict: ['currentHP'] ['health_potions'] ['currentMoney']
             monster: ['health']
-
     """
-
     # if monster stats not passed in, create new random monster
     if len(monster) == 0:
         monster = new_random_monster()
-    
     print(f"You've encountered a {monster['name']}!")
     displayFightStats(user_stats_dict, monster)
 
@@ -171,60 +168,75 @@ def fightMonster(user_stats_dict, monster={}):
         getUserFightOptions(user_stats_dict, monster)
         user_action = input("Choose your action: ")
         print("")
-        # FIXME -- move 'Attack' to own function?
         if user_action == '1':
-            print("You chose to fight!\n")
-
-            # Slay monster if health at or below 5 HP
-            if monster['health'] <= 5:
-                damage_dealt = monster['health']
-            else:
-                damage_dealt = random.randint(0, monster['health'])
-            monster['health'] -= damage_dealt
-
-            # If user's HP is <= damage received, damage_received is equal
-            # to user's HP.
-            damage_received = random.randint(1, 25)
-            if user_stats_dict['currentHP'] <= damage_received:
-                damage_received = user_stats_dict['currentHP']
-                user_stats_dict['currentHP'] -= damage_received
-            else:
-                user_stats_dict['currentHP'] -= damage_received
-            print(f"Damage dealt: {damage_dealt}")
-            print(f"Damage Received: {damage_received}")
-            displayFightStats(user_stats_dict, monster)
-
-            # If user slays monster, print messages, add gold to user_stats_dict
-            # and quit fight.
-            if monster['health'] == 0:
-                print(f"You have slain the {monster['name']}!")
-                print(f"Gold acquired: {monster['money']}")
-                user_stats_dict['currentMoney'] += monster['money']
-                getUserStats(user_stats_dict)
-                quit_fight = True
-            # If user HP reaches 0 and monster still has HP, force user
-            # to abandon fight.
-            elif user_stats_dict['currentHP'] == 0:
-                print("Your HP has fallen to 0 and you have been defeated.")
-                print("You must run away and sleep to regenerate health.\n")
-                quit_fight = True
-        
-        if user_action == '2':
+            quit_fight = attackMonster(user_stats_dict, monster)
+        elif user_action == '2':
             drinkHealthPotion(user_stats_dict)
             displayFightStats(user_stats_dict, monster)
-        if user_action == '3':
+        elif user_action == '3':
             print("You ran away!")
             getUserStats(user_stats_dict)
             quit_fight = True
+        elif user_action == '4':
+            quit_fight = attackMonster(user_stats_dict, monster, cheat=True)
+        else:
+            print("Invalid option, please try again.")
 
-        # If user cheats, give same messages and gold as if they killed monster
-        # by their own hands.
-        if user_action == '4':
+def attackMonster(user_stats_dict, monster, cheat=False):
+    """Generates random damage values that the user deals and receives and  
+    updates user stats and monster stats to reflect damage dealt and received.
+    If monster HP falls to 0, user is congratulated and awarded monster's gold. 
+    If user HP falls to 0, user is forced to abandon the fight.
+    THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS.
+
+    Parameters:
+        user_stats_dict (dict) - Dictionary containing user stats
+        monster (dict) - Dictionary containing monster stats
+        cheat (bool) - Default is False and function proceeds normally. If True,
+        the user slays the monster for free and acquires its gold, taking no
+        damage.
+    
+    Returns: 'True' if user HP or monster HP falls to 0, 'False' if otherwise.
+    """
+
+    if cheat == True:
+        print(f"You have slain the {monster['name']}!")
+        print(f"Gold acquired: {monster['money']}")
+        user_stats_dict['currentMoney'] += monster['money']
+        getUserStats(user_stats_dict)
+        return True
+    elif cheat == False:
+        print("You chose to fight!\n")
+
+        # User deals max damage when monster's health at or below 5 HP
+        if monster['health'] <= 5:
+            damage_dealt = monster['health']
+        else:
+            damage_dealt = random.randint(1, monster['health'])
+        monster['health'] -= damage_dealt
+
+        damage_received = random.randint(1, 25)
+        if user_stats_dict['currentHP'] <= damage_received:
+            damage_received = user_stats_dict['currentHP']
+            user_stats_dict['currentHP'] -= damage_received
+        else:
+            user_stats_dict['currentHP'] -= damage_received
+        print(f"Damage dealt: {damage_dealt}")
+        print(f"Damage Received: {damage_received}\n")
+        displayFightStats(user_stats_dict, monster)
+
+        if monster['health'] == 0:
             print(f"You have slain the {monster['name']}!")
             print(f"Gold acquired: {monster['money']}")
             user_stats_dict['currentMoney'] += monster['money']
             getUserStats(user_stats_dict)
-            quit_fight = True
+            return True
+        elif user_stats_dict['currentHP'] == 0:
+            print("Your HP has fallen to 0 and you have been defeated.")
+            print("You must run away and sleep to regenerate health.\n")
+            return True
+        else:
+            return False
 
 def getUserFightOptions(user_stats_dict, monster):
     """Prints a list of options for user to choose from when fighting a monster.
@@ -419,7 +431,7 @@ def getUserGameOptions():
     """
     print("1) Enter shop")
     print("2) Fight monster")
-    print("3) Sleep (Restore 10HP for 5 gold)")
+    print("3) Sleep (Restore 10HP)")
     print("4) Drink Health Potion (Restore 75 HP)")
     print("5) Display stats")
     print("q) Quit game")
