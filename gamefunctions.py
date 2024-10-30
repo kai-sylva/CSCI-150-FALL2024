@@ -303,6 +303,7 @@ def print_welcome(name="friend", width=20):
     print(f'{welcome:^{width}}')
 
 def print_shop_menu(shop_items_dict):
+    #FIXME -- allow item names longer than 15 characters
     """Takes a dictionary of shop items and prints a nicely formatted shop menu 
     with item names and respective prices. 
     Mutable parameters are NOT altered.
@@ -346,8 +347,19 @@ def getUserStats(user_stats_dict):
 {'Gold:':<7}{user_stats_dict['currentMoney']:>18}
 {'Health Potions:':<15}{user_stats_dict['health_potions']:>10}
 """)
+    
+def getUserInventory(inventory):
+    #FIXME -- add docstring
+    print(f'{"Inventory":-^25}')
+    for item in inventory:
+        print(f'{item['name']}\n{"-"*15}')
+        for key, value in item.items():
+            if key != 'name':
+                print(f'{key}: {value}')
+        print()
 
-def buyShopItems(user_stats_dict, shop_items_dict):
+def buyShopItems(user_stats_dict, shop_items_dict, inventory):
+    # FIXME -- update docstring
     """Takes user stats and shop items and prints a shop menu from which the
     user can choose to buy an item. 
     THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS.

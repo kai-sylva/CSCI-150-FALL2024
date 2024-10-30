@@ -18,11 +18,22 @@ user_stats = {
     'health_potions': 1
 }
 
+inventory = [
+    #{'name': 'health potion', 'type': 'potion', 'quantity': user_stats['health_potions']},
+    # FIXME -- move health potions to inventory (rewrite code referencing potions in user_stats)
+    {'name': 'sword', 'type': 'weapon', 'durability': 100, 'maxDurability': 100}
+
+
+]
+gamefunctions.getUserInventory(inventory)
+
 # Dictionary with current shop items
 shop_items = {
     'apples': 1,
     'strawberries': 2,
-    'health potion': 50
+    'health potion': 50,
+    'sword': 100,
+    'insta kill spell': 100
 }
 
 # Display (default) user stats
