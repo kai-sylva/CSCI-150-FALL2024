@@ -1,6 +1,9 @@
 """Collection of functions created for CSCI-150 project.
 
 The various functions include...
+    getUserGameOptions(): Prints a menu of game options for user to choose from.
+    Main navigation for the game loop, 'q' to quit.
+
     purchase_item(): takes itemprice, startingmoney, and 
     quantityToPurchase and returns tuple containing information on
     transaction.
@@ -13,15 +16,20 @@ The various functions include...
     the monster.
 
     attackMonster(): Generates random damage values (both dealt and received)
-    and adjusts user stats and monster stats accordingly. User can cheat and
+    and adjusts user stats and monster stats accordingly. User can cheat or
     instantly slay monster to acquire its gold. Takes user stats, monster stats,
     and cheat boolean as parameters.
 
+    equipWeapon(): Allows user to equip a weapon from their inventory.
+
+    getUserFightOptions(): Prints a list of options for user to choose from when 
+    fighting a monster.
+
     displayFightStats(): Prints a formatted summary of the current fight 
-    statistics between user anda monster. 
+    statistics between user and a monster. 
 
     drinkHealthPotion(): Takes user's stats from a dictionary and adds 75 HP
-    if user possesses at least 1 health potion.
+    if user possesses at least 1 health potion in their inventory.
 
     print_welcome(): takes name (and optional width argument) and outputs
     a centered welcome message.
@@ -31,25 +39,49 @@ The various functions include...
 
     getUserStats(): Prints formatted menu of current player stats.
 
-    buyShopItems(): Takes user's stats and dictionary of shop items and allows
-    user to purchase items from the shop.
+    buyShopItems(): Takes user's stats, inventory, and dictionary of shop items 
+    and allows user to purchase items from the shop.
+
+    addToInventory(): Adds an item to the user's inventory. If an item requires 
+    a new itemId, calls the createItemId() function.
+
+    createItemId(): Gathers a list of all the item IDs in user's inventory and 
+    returns a unique item ID (not found in inventory) between 10 and 999.
+
+    repairWeapon(): Allows user to repair a weapon with a durability less than 
+    its max durability. Costs 25 gold to increase a weapon's durability by 1.
 
     sleep(): User "sleeps" and restores 10 HP. Can be used as a way to restore
     HP when user has no health potions or money to buy health potions. 
     Can only be done outside of a fight.
 
-    getUserGameOptions(): Prints a menu of game options for user to choose from.
-    Main navigation, 'q' to quit.
-
 """
 
 ### Kai Rebich
-### 10/25/2024
+### 10/31/2024
 ### gamefunctions.py
 ### This file is a collection of various functions and project additions
 ### made throughout the course of CSCI 150
 
 import random
+from copy import deepcopy
+
+def getUserGameOptions():
+    """Prints a simple menu of game options to the user. 
+
+    Parameters: none
+
+    Returns: None
+    """
+    print("1) Enter shop")
+    print("2) Fight monster")
+    print("3) Equip Weapon")
+    print("4) Sleep (Restore 10HP)")
+    print("5) Drink Health Potion (Restore 75 HP)")
+    print("6) Display stats")
+    print("7) Display inventory")
+    print("8) Repair weapon (costs 25 gold)")
+    print("q) Quit game")
 
 def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
     """ Returns a tuple containing the number of items purchased, 
@@ -86,7 +118,6 @@ def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
         leftoverMoney = round((startingMoney - (quantityToPurchase * itemPrice)), 2)
         notEnoughMoney = False
         return int(quantityToPurchase), leftoverMoney, notEnoughMoney
-
 
 def new_random_monster():
     """Returns a dictionary of a random monster with random health, power,
@@ -130,13 +161,15 @@ a frost troll guarding a suspicious chest."""
         monster['money'] = random.randint(5000, 7000)
     return monster
 
-def fightMonster(user_stats_dict, monster={}):
+def fightMonster(user_stats_dict, inventory, monster={}):
     """Takes user stats and monster stats and allows user to attack the monster,
     drink health potions, run away, or cheat and instantly slay the monster.
     THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS.
 
     Parameters:
         user_stats_dict (dict): Dictionary containing user stats.
+        inventory (list): List of nested dictionaries; each dictionary holds 
+            information about an item in user's inventory.
         monster (dict): Dictionary containing monster stats. If no value is
             passed, a random monster is generated.
     
@@ -146,16 +179,18 @@ def fightMonster(user_stats_dict, monster={}):
         User Actions:
             1) "Attack": User attacks monster, dealing damage and receiving
             damage. Calls attackMonster() function.
-            2) "Drink health potion": User drinks health potion (calls
+            2) "Equip weapon": Allows user to equip a weapon from their
+                inventory. Calls equipWeapon() function.
+            3) "Drink health potion": User drinks health potion (calls
             drinkHealthPotion() function) and restores 75 HP.
-            3) "Run Away": User runs away and abandons fight.
-            4) "(Cheat) Instantly slay monster": User slays monster for free.
+            4) "Run Away": User runs away and abandons fight.
+            5) "Instakill": Allows user to instantly slay monster if they 
+                have at least one instakill spell in their inventory.
+            cheat) "Instantly slay monster": User slays monster for free. Not
+                advertised to user.
 
             If or when user slays monster, they are rewarded the monster's
             stash of gold.
-        Parameters altered:
-            user_stats_dict: ['currentHP'] ['health_potions'] ['currentMoney']
-            monster: ['health']
     """
     # if monster stats not passed in, create new random monster
     if len(monster) == 0:
@@ -165,41 +200,72 @@ def fightMonster(user_stats_dict, monster={}):
 
     quit_fight = False
     while quit_fight == False:
-        getUserFightOptions(user_stats_dict, monster)
+        getUserFightOptions(monster)
         user_action = input("Choose your action: ")
         print("")
         if user_action == '1':
-            quit_fight = attackMonster(user_stats_dict, monster)
+            quit_fight = attackMonster(user_stats_dict, inventory, monster)
         elif user_action == '2':
-            drinkHealthPotion(user_stats_dict)
+            equipWeapon(user_stats_dict, inventory)
             displayFightStats(user_stats_dict, monster)
         elif user_action == '3':
+            drinkHealthPotion(user_stats_dict, inventory)
+            displayFightStats(user_stats_dict, monster)
+        elif user_action == '4':
             print("You ran away!")
             getUserStats(user_stats_dict)
             quit_fight = True
-        elif user_action == '4':
-            quit_fight = attackMonster(user_stats_dict, monster, cheat=True)
+        elif user_action == '5':
+            quit_fight = attackMonster(user_stats_dict, inventory, monster, instakill=True)
+        elif user_action == 'cheat':
+            quit_fight = attackMonster(user_stats_dict, inventory, monster, cheat=True)
         else:
             print("Invalid option, please try again.")
 
-def attackMonster(user_stats_dict, monster, cheat=False):
-    """Generates random damage values that the user deals and receives and  
-    updates user stats and monster stats to reflect damage dealt and received.
-    If monster HP falls to 0, user is congratulated and awarded monster's gold. 
-    If user HP falls to 0, user is forced to abandon the fight.
+def attackMonster(user_stats_dict, inventory, monster, cheat=False, instakill=False):
+    """User attacks monster, dealing damage to the monster's HP equal to the 
+        user's attack power. Attack power is a combination of the user's base 
+        power and weapon power IF their equipped weapon is not broken. Monster 
+        also deals a random amount of damage between 1 and 25. If monster HP
+        falls to 0, user is congratulated and awarded monster's gold. If user HP
+        falls to 0, user is forced to abandon the fight.
     THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS.
 
     Parameters:
         user_stats_dict (dict) - Dictionary containing user stats
+        inventory (list): List of nested dictionaries; each dictionary holds 
+            information about an item in user's inventory.
         monster (dict) - Dictionary containing monster stats
         cheat (bool) - Default is False and function proceeds normally. If True,
-        the user slays the monster for free and acquires its gold, taking no
-        damage.
+            the user slays the monster for free and acquires its gold, taking no
+            damage.
+        instakill (bool) - Default is false and function proceeds normally. If 
+            True, checks that user has at least 1 instakill spell. If they do,
+            consumes instakill spell and user slays monster and takes 0 damage.
     
     Returns: 'True' if user HP or monster HP falls to 0, 'False' if otherwise.
     """
 
-    if cheat == True:
+    if instakill == True:
+        for item in inventory:
+            if item['name'] == 'instakill':
+                if item['quantity'] < 1:
+                    print("You have no more instakill spells remaining.")
+                    displayFightStats(user_stats_dict, monster)
+                    return False
+                else:
+                    item['quantity'] -= 1
+                    print(f"You have slain the {monster['name']} with an instakill spell!")
+                    print(f"Gold acquired: {monster['money']}")
+                    user_stats_dict['currentMoney'] += monster['money']
+                    getUserStats(user_stats_dict)
+                    return True
+            else:
+                continue
+        print("You have no instakill spells.")
+        displayFightStats(user_stats_dict, monster)
+        return False
+    elif cheat == True:
         print(f"You have slain the {monster['name']}!")
         print(f"Gold acquired: {monster['money']}")
         user_stats_dict['currentMoney'] += monster['money']
@@ -208,12 +274,26 @@ def attackMonster(user_stats_dict, monster, cheat=False):
     elif cheat == False:
         print("You chose to fight!\n")
 
-        # User deals max damage when monster's health at or below 5 HP
-        if monster['health'] <= 5:
+        attack_power = user_stats_dict['attack_power']
+
+        if monster['health'] <= attack_power:
             damage_dealt = monster['health']
         else:
-            damage_dealt = random.randint(1, monster['health'])
+            damage_dealt = attack_power
         monster['health'] -= damage_dealt
+        
+        for item in inventory:
+            if item['itemId'] == user_stats_dict['weapon_id']:
+                # weapon_ref is only used to reference weapon's durability
+                weapon_ref = item
+                if item['durability'] > 1:
+                    item['durability'] -= 1
+                elif item['durability'] == 1:
+                    item['durability'] -= 1
+                    user_stats_dict['attack_power'] -= item['attack power']
+                    user_stats_dict['weapon_power'] = 0
+                    attack_power = user_stats_dict['attack_power']
+                    print(f"{item['name'].title()} broke! Attack power has fallen to {attack_power}")
 
         damage_received = random.randint(1, 25)
         if user_stats_dict['currentHP'] <= damage_received:
@@ -222,7 +302,10 @@ def attackMonster(user_stats_dict, monster, cheat=False):
         else:
             user_stats_dict['currentHP'] -= damage_received
         print(f"Damage dealt: {damage_dealt}")
-        print(f"Damage Received: {damage_received}\n")
+        print(f"Damage Received: {damage_received}")
+        if user_stats_dict['equipped_weapon'] != 'None':
+            print(f"{weapon_ref['name'].title()} durability: {weapon_ref['durability']}")
+        print()
         displayFightStats(user_stats_dict, monster)
 
         if monster['health'] == 0:
@@ -238,20 +321,107 @@ def attackMonster(user_stats_dict, monster, cheat=False):
         else:
             return False
 
-def getUserFightOptions(user_stats_dict, monster):
+def equipWeapon(user_stats_dict, inventory):
+    """Allows user to equip a weapon from their inventory.
+    THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS
+
+    Parameters:
+        user_stats_dict (dict) - Dictionary containing user stats
+        inventory (list): List of nested dictionaries; each dictionary holds 
+            information about an item in user's inventory.
+    
+    Returns: None
+
+    """
+
+    # Grab list of weapons and IDs
+    weapon_list = []
+    weapon_ids = []
+    for item in inventory:
+        if item['type'] == 'weapon':
+            weapon_list.append(item)
+            weapon_ids.append(item['itemId'])
+
+    if len(weapon_list) == 0:
+        print("\nYou have no weapons to equip\n")
+        return None
+    
+    print(f"\nCurrently equipped: {user_stats_dict['equipped_weapon']}\n")
+
+    # Show available weapons to equip
+    getUserInventory(weapon_list, "Weapons")
+
+    quit_equip = False
+    while quit_equip == False:
+        user_action = input("What would you like to equip?(enter itemId or 'q' for quit) ")
+
+        if user_action == 'q':
+            quit_equip = True
+        elif user_action in weapon_ids:
+            # Remove currently equipped weapon and update weapon in inventory
+            if user_stats_dict['equipped_weapon'] != 'None':
+                user_stats_dict['attack_power'] -= user_stats_dict['weapon_power']
+                user_stats_dict['weapon_power'] = 0
+                user_stats_dict['weapon_id'] = 'None'
+                user_stats_dict['equipped_weapon'] = 'None'
+                for item in inventory:
+                    if item['equipped'] == True:
+                        item['equipped'] = False
+                        print(f"\n{item['name']} (ID: {item['itemId']}) unequipped.")
+            # Find weapon and equip, updating user stats and weapon details
+            for item in inventory:
+                if item['itemId'] == user_action:
+                    # If item is broken, allow user option to continue equipping
+                    if item['durability'] <= 0:
+                        print("\nYou may equip this weapon, but it is broken and won't")
+                        print("increase your overall damage.")
+
+                        quit_equipBroken = False
+                        while quit_equipBroken == False:
+                            equipBroken = input("Would you like to continue?(y/n) ")
+                            if equipBroken == 'n':
+                                quit_equipBroken = True
+                            # Equip broken weapon
+                            elif equipBroken == 'y':
+                                item['equipped'] = True
+                                user_stats_dict['equipped_weapon'] = item['name']
+                                user_stats_dict['weapon_id'] = item['itemId']
+                                print(f"\n{item['name'].title()} successfully equipped!")
+                                print(f"Durability: {item['durability']}")
+                                print(f"Total attack power: {user_stats_dict['attack_power']}\n")
+                                quit_equipBroken = True
+                                quit_equip = True
+                            else:
+                                print("Invalid option, please try again")
+                    # Equip chosen weapon, update user power and weapon status
+                    else:
+                        user_stats_dict['attack_power'] += item['attack power']
+                        item['equipped'] = True
+                        user_stats_dict['equipped_weapon'] = item['name']
+                        user_stats_dict['weapon_power'] = item['attack power']
+                        user_stats_dict['weapon_id'] = item['itemId']
+                        
+                        print(f"\n{item['name'].title()} successfully equipped!")
+                        print(f"Durability: {item['durability']}")
+                        print(f"Total attack power: {user_stats_dict['attack_power']}\n")
+                        quit_equip = True
+        elif user_action not in weapon_ids:
+            print("Invalid option, please try again\n")
+
+def getUserFightOptions(monster):
     """Prints a list of options for user to choose from when fighting a monster.
     Mutable parameters are NOT altered.
 
     Parameters: 
-        user_stats_dict (dict): Dictionary containing user stats
-        monster (dict): Dictionary contianing monster stats
+        monster (dict): Dictionary contianing monster stats. This is currently
 
     Returns: None
     """
     print("1) Attack")
-    print(f"2) Drink health potion ({user_stats_dict['health_potions']} remaining)")
-    print("3) Run away")
-    print(f"4) (Cheat) Instantly slay the {monster['name']}")
+    print("2) Equip weapon")
+    print(f"3) Drink health potion")
+    print("4) Run away")
+    print(f"5) Instakill the {monster['name']}")
 
 def displayFightStats(user_stats_dict, monster):
     """Prints a formatted summary of the current fight statistics between user and
@@ -264,30 +434,40 @@ def displayFightStats(user_stats_dict, monster):
     Returns: None
     """
 
+    # FIXME (@ later date) -- fix readability
     print(f"""
 {monster['name'].title()+' Stats':-^25} {'Your Stats':-^25}
 {'Gold:':<7}{str(monster['money']):>18} {'Gold:':<7}{user_stats_dict['currentMoney']:>18}
 {'HP:':<7}{monster['health']:>18} {'HP:':<7}{user_stats_dict['currentHP']:>18}
-{'Power:':<7}{monster['power']:>18}
+{'Power:':<7}{monster['power']:>18} {'Equipped Weapon: ':<12}{user_stats_dict['equipped_weapon']:>8}
+{' '*25} {'Attack Power: ':<12}{user_stats_dict['attack_power']:>11}
 """)
 
-def drinkHealthPotion(user_stats_dict):
-    """Takes user stats and checks for valid number of health potions. If user 
-    has health potions, restores 75 HP and subtracts 1 health potion. 
-    THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS.
+def drinkHealthPotion(user_stats_dict, inventory):
+    """Allows user to consume a health potion from their inventory, grants 75 HP
+    THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS
 
     Parameters:
-        user_stats_dict (dict): Dictionary containing user stats.
+        user_stats_dict (dict) - Dictionary containing user stats
+        inventory (list): List of nested dictionaries; each dictionary holds 
+            information about an item in user's inventory.
     
     Returns: None
+
     """
-    if user_stats_dict['health_potions'] > 0:
-        user_stats_dict['health_potions'] -= 1
-        user_stats_dict['currentHP'] += 75
-        print(f"75 HP Restored!")
-        print(f"Health potions remaining: {user_stats_dict['health_potions']}\n")
-    else:
-        print("No health potions remaining\n")
+
+    for item in inventory:
+        if item['name'] != 'health potion':
+            continue
+        else:
+            if item['quantity'] > 0:
+                item['quantity'] -= 1
+                user_stats_dict['currentHP'] += 75
+                print(f"\n75 HP Restored!")
+                print(f"Current HP: {user_stats_dict['currentHP']}")
+                print(f"Health potions remaining: {item['quantity']}\n")
+            else:
+                print("No health potions remaining")
 
 def print_welcome(name="friend", width=20):
     """Prints a centered welcome message
@@ -322,8 +502,8 @@ def print_shop_menu(shop_items_dict):
     print(f'/{border_dashes}\\')
     print(f'{"| Item":<15}{"Price":>10} |')
     print(f'|{border_dashes}|')
-    for item, price in shop_items_dict.items():
-        print(f'| {item.title():<15}{price:>8} |')
+    for item, details in shop_items_dict.items():
+        print(f"| {item.title():<15}{details['price']:>8} |")
     print(f'\\{border_dashes}/')
 
 def getUserStats(user_stats_dict):
@@ -334,8 +514,9 @@ def getUserStats(user_stats_dict):
         user_stats_dict (dict) -- dictionary containing various user stats
             ['user_name']: User's name
             ['currentHP']: User's current HP
+            ['attack_power']: User's total attack power
+            ['equipped_weapon']: User's currently equipped weapon.
             ['currentMoney']: User's current gold inventory
-            ['health_potions']: User's current health potion inventory
     
     Returns: None
 
@@ -344,38 +525,45 @@ def getUserStats(user_stats_dict):
 {'Stats':-^25}
 {'Name:':<7}{user_stats_dict['user_name']:>18}
 {'HP:':<7}{user_stats_dict['currentHP']:>18}
+{'Attack Power:':<15}{user_stats_dict['attack_power']:>10}
+{'Equipped Weapon:':<15}{user_stats_dict['equipped_weapon']:>9}
 {'Gold:':<7}{user_stats_dict['currentMoney']:>18}
-{'Health Potions:':<15}{user_stats_dict['health_potions']:>10}
 """)
     
-def getUserInventory(inventory):
-    #FIXME -- add docstring
-    print(f'{"Inventory":-^25}')
+def getUserInventory(inventory, type_name="Type: Not Specified"):
+    """Prints a formatted menu of user's inventory items. Type of item(s) should
+    be specified.
+    Mutable parameters are NOT altered.
+
+    Parameters:
+        inventory (list): List of nested dictionaries; each dictionary holds 
+            information about an item in user's inventory.
+        type_name (str): Type of inventory item(s) displayed.
+
+    Returns: None
+    """
+    print()
+    print(f'<->-<->-<->{type_name:}<->-<->-<->')
     for item in inventory:
-        print(f'{item['name']}\n{"-"*15}')
+        print(f"{item['name']:-^20}")
         for key, value in item.items():
             if key != 'name':
                 print(f'{key}: {value}')
         print()
 
 def buyShopItems(user_stats_dict, shop_items_dict, inventory):
-    # FIXME -- update docstring
-    """Takes user stats and shop items and prints a shop menu from which the
-    user can choose to buy an item. 
+    """Takes user stats, inventory, and shop items and prints a shop menu from 
+    which the user can choose to buy an item. 
     THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS.
 
     Parameters:
         user_stats_dict (dict): Dictionary containing user's stats.
         shop_items_dict (dict): Dictionary containing shop items (keys) and 
         prices (values).
+        inventory (list): List of nested dictionaries; each dictionary holds 
+            information about an item in user's inventory.
     
     Returns: None
-
-    Notes:
-        This function currently only allows the health potions to be added to
-        the user's inventory. Attempting to buy any other items will simply
-        result in a donation to the shop.
-    
     """
 
     # Welcome user and print shop menu with the items in shop_items_dict
@@ -395,18 +583,29 @@ def buyShopItems(user_stats_dict, shop_items_dict, inventory):
             continue
         elif item in shop_items_dict:
             # Get input on quantity to purchase
-            quantityToPurchase = int(input(f'Quantity of {item} to purchase: '))
+            quantityValid = False
+            while quantityValid == False:
+                quantityToPurchase = input(f'Quantity of {item} to purchase: ')
+                if quantityToPurchase.isdigit():
+                    quantityToPurchase = int(quantityToPurchase)
+                    quantityValid = True
+                else:
+                    print("Invalid option, please try again\n")
+
             # Pass transaction info into purchase_item
-            transaction = purchase_item(shop_items_dict[item], user_stats_dict['currentMoney'], quantityToPurchase)
+            transaction = purchase_item(shop_items_dict[item]['price'], user_stats_dict['currentMoney'], quantityToPurchase)
             # Update user's remaining gold inventory
             user_stats_dict['currentMoney'] = transaction[1]
+            purchased_item = shop_items_dict[item]
 
-            # FIXME-(fix @ later date) allow more items to be added to inventory
-            # Update user's health potion inventory (if purchased)
-            if item == "health potion":
-                user_stats_dict['health_potions'] += transaction[0]
-            # Check if they had enough gold for quantityToPurchase and
-            # print receipt of transaction
+            if type(purchased_item['quantity']) == int:
+                purchased_item['quantity'] = transaction[0]
+
+            # Add purchased item to user's inventory
+            addToInventory(purchased_item, inventory, transaction[0])
+                    
+
+            # Print receipt of transaction
             if transaction[2] == True:
                 print(f"""\nOops, you can only afford {transaction[0]} {item}. 
 \nQuantity purchased: {transaction[0]}
@@ -415,6 +614,162 @@ Remaining gold: {transaction[1]}""")
                 print(f"""\nQuantity purchased: {transaction[0]}
 Remaining gold: {transaction[1]}""")
                 
+def addToInventory(item, inventory, quantity):
+    """Adds an item to the user's inventory. If an item requires a new itemId,
+    calls the createItemId() function.
+    THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS
+
+    Parameters:
+        item (dict): Dictionary containing details about an item.
+        inventory (list): List of nested dictionaries; each dictionary holds 
+            information about an item in user's inventory.
+        quantity (int): Quantity of item to add to inventory. **READ NOTES**
+
+    Returns: None
+
+    Notes: The quantity parameter is currently only used for items that have a 
+        quantity value of 'single'. It is NOT used for items whose quantity
+        values are integers, such as health potions and instakill spells.
+        The reason for this is to distinguish between items which may need to 
+        have attributes altered other than the quantity key (ex. weapon 
+        durability). 
+    """
+    # Inventory will typically default to having health potions at start, but
+    # just in case the inventory is empty...
+    if len(inventory) == 0:
+        if item['quantity'] == 'single':
+            for _ in range(quantity):
+                itemId = createItemId(inventory)
+                newitem = deepcopy(item)
+                newitem['itemId'] = itemId
+                inventory.append(newitem)
+        else:
+            itemId = createItemId(inventory)
+            newitem = deepcopy(item)
+            newitem['itemId'] = itemId
+            inventory.append(newitem)
+
+    else:
+        # Check if item exists in inventory
+        for inv_item in inventory:
+            if inv_item['name'] == item['name']:
+                # if item does not "stack" (ex. swords)
+                if item['quantity'] == 'single':
+                    for _ in range(quantity):
+                        itemId = createItemId(inventory)
+                        newitem = deepcopy(item)
+                        newitem['itemId'] = itemId
+                        inventory.append(newitem)
+                    return None
+                else:
+                    newitem = deepcopy(inv_item)
+                    inventory.remove(inv_item)
+                    newitem['quantity'] += item['quantity']
+                    inventory.append(newitem)
+                    return None
+            else:
+                continue
+        
+        # If item does not exist in inventory, add to inventory
+        if item['quantity'] == 'single':
+            for _ in range(quantity):
+                itemId = createItemId(inventory)
+                newitem = deepcopy(item)
+                newitem['itemId'] = itemId
+                inventory.append(newitem)
+            return None
+        else:
+            itemId = createItemId(inventory)
+            newitem = deepcopy(item)
+            newitem['itemId'] = itemId
+            inventory.append(newitem)
+            return None
+
+def createItemId(inventory):
+    """Gathers a list of all the item IDs in user's inventory and returns a
+    unique item ID (not found in inventory) between 10 and 999.
+    This function does NOT alter its mutable parameters.
+
+    Parameters:
+        inventory (list): List of nested dictionaries; each dictionary holds 
+            information about an item in user's inventory.
+    
+    Returns: itemId (str): item ID between numbers 10-999. 
+    """
+    id_list = []
+
+    if len(inventory) == 0:
+        itemId = str(random.randint(10, 999))
+    # If items exist in inventory, append all IDs to id_list
+    else:
+        for inv_item in inventory:
+            inv_id = inv_item['itemId']
+            id_list.append(inv_id)
+
+        itemId = str(random.randint(10, 999))
+        # Keep generating IDs until a unique ID is found.
+        # FIXME (@ later date) -- Infinite loop if inventory is 'full'; idk how
+        # to fix if I want to allow a seemingly infinite inventory.
+        while itemId in id_list:
+            itemId = str(random.randint(10, 999))
+        
+    return itemId
+
+def repairWeapon(user_stats_dict, inventory):
+    """Allows user to repair a weapon with a durability less than its max
+    durability. Costs 25 gold to increase a weapon's durability by 1.
+
+    Parameters:
+        user_stats_dict (dict) - Dictionary containing user stats
+        inventory (list): List of nested dictionaries; each dictionary holds 
+            information about an item in user's inventory.
+    
+    Returns: None
+
+    """
+    # Grab a list of weapons and list of weapon IDs
+    weapon_list = []
+    weapon_ids = []
+    for item in inventory:
+        if item['type'] == 'weapon':
+            weapon_list.append(item)
+            weapon_ids.append(item['itemId'])
+
+    # Basic checks to see if user can repair any weapons
+    if len(weapon_list) == 0:
+        print("\nYou have no weapons to repair\n")
+        return None
+    elif user_stats_dict['currentMoney'] < 25:
+        print("\nYou don't have enough gold.\n")
+        return None
+
+    quit_repair = False
+    while quit_repair == False:
+        # Show weapons in inventory as well as current gold
+        # FIXME (@ later date) -- change logic above^^ to only grab weapons
+        # that can be repaired.
+        getUserInventory(weapon_list, type_name="Weapons")
+        print(f"Gold: {user_stats_dict['currentMoney']}")
+        user_action = input("Which weapon would you like to repair?(enter itemId or 'q' to quit) ")
+
+        if user_action == 'q':
+            quit_repair = True
+        elif user_action in weapon_ids:
+            for item in inventory:
+                if user_action == item['itemId']:
+                    if item['durability'] < item['max durability']:
+                        item['durability'] += 1
+                        user_stats_dict['currentMoney'] -= 25
+                        print(f"{item['name'].title()} successfully repaired!")
+                        if user_stats_dict['currentMoney'] < 25:
+                            quit_repair = True
+                        else:
+                            continue
+                    else:
+                        print("This weapon does not need to be repaired\n")
+        elif user_action not in weapon_ids:
+            print("Invalid option, please try again\n")
+                    
 def sleep(user_stats_dict):
     """Takes user stats and adds 10 HP.
     THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS.
@@ -433,21 +788,6 @@ def sleep(user_stats_dict):
     user_stats_dict['currentHP'] += 10
     print("\nYou chose to sleep and restore 10HP.")
     print(f"Current HP: {user_stats_dict['currentHP']}\n")
-
-def getUserGameOptions():
-    """Prints a simple menu of game options to the user. 
-
-    Parameters: none
-
-    Returns: None
-    """
-    print("1) Enter shop")
-    print("2) Fight monster")
-    print("3) Sleep (Restore 10HP)")
-    print("4) Drink Health Potion (Restore 75 HP)")
-    print("5) Display stats")
-    print("q) Quit game")
-
     
 def test_functions():
     """test code to run if __name__ == __main__, each function runs 3x min
@@ -462,8 +802,17 @@ def test_functions():
         'user_name': 'kai',
         'currentHP': 100,
         'currentMoney': 250,
-        'health_potions': 1
+        'attack_power': 20,
+        'equipped_weapon': 'None',
+        'weapon_power': 0,
+        'weapon_id': 'None'
     }
+
+    inventory = [
+    {'name': 'health potion', 'price': 50, 'quantity': 1, 'type': 'potion', 
+     'equipped': False, 'itemId': '1'}
+    ]
+    
     # should return 2 items purchased and $4.20 change returned
     print(purchase_item(2.90, 10.0, 2))
     # should return 3 items purchased b/c 5 can't be afforded
@@ -496,20 +845,26 @@ def test_functions():
     sleep(user_stats)
 
     # Testing drinkHealthPotion()
-    drinkHealthPotion(user_stats)
+    drinkHealthPotion(user_stats, inventory)
 
-    shop_items_1 = {"Apple": 1000, "Banana": 2, "Raspberries": 4}
-    shop_items_2 = {"Sourdough": 6, "Flour": 7}
-    shop_items_3 = {"Tomato": 2, "Ketchup": 17}
-    print_shop_menu(shop_items_1)
-    print_shop_menu(shop_items_2)
-    print_shop_menu(shop_items_3)
+    shop_items = {
+        'health potion': {'price': 50, 'quantity': 1, 'type': 'potion', 
+                        'name': 'health potion', 'equipped': False},
+        'sword': {'price': 100, 'quantity': 'single', 'type': 'weapon', 'durability': 5, 
+                'max durability': 10, 'attack power': 500, 'name': 'sword',
+                'equipped': False},
+        'instakill spell': {'price': 100, 'quantity': 1, 'type': 'spell',
+                            'name': 'instakill', 'equipped': False}
+    }
+    print_shop_menu(shop_items)
 
+    randomId = createItemId(inventory)
+    print(f"\nThis is a random test ID: {randomId}")
     getUserStats(user_stats)
-    buyShopItems(user_stats, shop_items_1)
-    fightMonster(user_stats)
-
-
+    buyShopItems(user_stats, shop_items, inventory)
+    equipWeapon(user_stats, inventory)
+    fightMonster(user_stats, inventory)
+    repairWeapon(user_stats, inventory)
 
 if __name__ == "__main__":
     test_functions()
