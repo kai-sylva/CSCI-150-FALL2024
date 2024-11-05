@@ -1,13 +1,13 @@
 #Kai Rebich - game.py
-#10/31/2024 - CSCI 150
-#This file is a simulation of a simple game using the
+#11/4/2024 - CSCI 150
+#This file is a simulation of a simple adventure game using the
 #functions imported from gamefunctions.py
 
 import gamefunctions
 
 # Check if save files exist. If not, new game.
 if gamefunctions.checkSaveExists() == False:
-    user_stats, inventory = gamefunctions.newGameStats()
+    user_stats, inventory = gamefunctions.newGame()
 else:
     user_stats, inventory = gamefunctions.loadFromSave()
 
@@ -56,14 +56,12 @@ while quit_game == False:
         print("Invalid option, please try again\n")
 
 if quit_game == True:
-    inputValid = False
-    while inputValid == False:
-        saveGame = input("Would you like to save your progress? (y/n) ")
-        if saveGame == 'y':
-            gamefunctions.saveGame(user_stats, inventory)
-            inputValid = True
-        elif saveGame == 'n':
-            print(f"Thanks for playing, {user_stats['user_name']}!")
-            inputValid = True
-        else:
-            print("Invalid option, please try again. ")
+    msg = "Would you like to save your progress?(y/n) "
+    saveGame = gamefunctions.verifyInput(msg, ['y', 'n'])
+    if saveGame == 'y':
+        gamefunctions.saveGame(user_stats, inventory)
+        print("Save successful!\n")
+    elif saveGame == 'n':
+        print()
+
+    print(f"Thanks for playing, {user_stats['user_name']}!")

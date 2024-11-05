@@ -58,7 +58,7 @@ The various functions include...
 """
 
 ### Kai Rebich
-### 10/31/2024
+### 11/4/2024
 ### gamefunctions.py
 ### This file is a collection of various functions and project additions
 ### made throughout the course of CSCI 150
@@ -68,6 +68,8 @@ from copy import deepcopy
 import json
 import os
 
+# FIXME -- docstrings, any awkward formatting
+
 def getUserGameOptions():
     """Prints a simple menu of game options to the user. 
 
@@ -75,15 +77,27 @@ def getUserGameOptions():
 
     Returns: None
     """
-    print("1) Enter shop")
-    print("2) Fight monster")
-    print("3) Equip Weapon")
-    print("4) Sleep (Restore 10HP)")
-    print("5) Drink Health Potion (Restore 75 HP)")
-    print("6) Display stats")
-    print("7) Display inventory")
-    print("8) Repair weapon (costs 25 gold)")
-    print("q) Quit game")
+
+    game_options = [
+        'Enter shop',
+        'Fight monster',
+        'Equip weapon',
+        'Sleep (Restore 10HP)',
+        'Drink Health Potion (Restore 75 HP)',
+        'Display stats',
+        'Display inventory',
+        'Repair weapon (costs 25 gold)',
+        'Quit game'
+    ]
+
+    option_number = 1
+
+    for option in range(len(game_options)):
+        if game_options[option] == 'Quit game':
+            print("q) Quit game")
+        else:
+            print(f"{option_number}) {game_options[option]}")
+            option_number += 1
 
 def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
     """ Returns a tuple containing the number of items purchased, 
@@ -415,7 +429,7 @@ def getUserFightOptions(monster):
     Mutable parameters are NOT altered.
 
     Parameters: 
-        monster (dict): Dictionary contianing monster stats. This is currently
+        monster (dict): Dictionary contianing monster stats.
 
     Returns: None
     """
@@ -494,22 +508,21 @@ def loadFromSave():
 
 def checkSaveExists():
     # FIXME -- docstring
-    if not os.path.exists("user_stats.json"):
+    if not os.path.exists("user_stats.json") and not os.path.exists("user_inventory.json"):
         print("Starting from new game.\n")
         return False
     else:
         print("1) Start from new game")
         print("2) Start from save file")
 
-        validInput = False
-        while validInput == False:
-            user_input = input(f"What would you like to do? ")
-            if user_input == '1':
-                return False
-            elif user_input == '2':
-                return True
-            else:
-                print("Invalid option, please try again.")
+        msg = "What would you like to do? "
+        user_input = verifyInput(msg, ['1', '2'])
+        if user_input == '1':
+            return False
+        elif user_input == '2':
+            return True
+        else:
+            print("Invalid option, please try again.")
 
 def saveGame(user_stats, inventory):
     # FIXME -- docstring
@@ -518,19 +531,20 @@ def saveGame(user_stats, inventory):
     with open("user_inventory.json", 'w') as file:
         json.dump(inventory, file, indent=4)
 
-def newGameStats():
+def newGame():
     # Get user's name, print welcome
     user_name = input("What is your name? ")
     print()
     print_welcome(user_name, width=0)
 
+    # Initial inventory
     inventory = [
         {'name': 'health potion', 'price': 50, 'quantity': 1, 'type': 'potion', 
         'equipped': False, 'itemId': '1'}
     ]
 
 
-    # Dictionary with user stats
+    # Initial user stats
     user_stats = {
         'user_name': user_name,
         'currentHP': 100,
@@ -790,47 +804,78 @@ def repairWeapon(user_stats_dict, inventory):
     """
     # Grab a list of weapons and list of weapon IDs
     weapon_list = []
-    weapon_ids = []
+    # 'q' is needed when being passed into verifyInput(), not a real itemId
+    weapon_ids = ['q']
     for item in inventory:
-        if item['type'] == 'weapon':
+        if item['type'] == 'weapon' and item['durability'] < item['max durability']:
             weapon_list.append(item)
             weapon_ids.append(item['itemId'])
 
-    # Basic checks to see if user can repair any weapons
-    if len(weapon_list) == 0:
-        print("\nYou have no weapons to repair\n")
-        return None
-    elif user_stats_dict['currentMoney'] < 25:
-        print("\nYou don't have enough gold.\n")
-        return None
-
     quit_repair = False
     while quit_repair == False:
+        # Basic checks to see if user can repair any weapons
+        if len(weapon_list) == 0:
+            print("You have no weapons to repair\n")
+            return None
+        if user_stats_dict['currentMoney'] < 25:
+            print(f"You don't have enough gold.\n")
+            return None
         # Show weapons in inventory as well as current gold
-        # FIXME (@ later date) -- change logic above^^ to only grab weapons
-        # that can be repaired.
         getUserInventory(weapon_list, type_name="Weapons")
         print(f"Gold: {user_stats_dict['currentMoney']}")
-        user_action = input("Which weapon would you like to repair?(enter itemId or 'q' to quit) ")
+
+        msg = "Which weapon would you like to repair?(enter itemId or 'q' to quit) "
+        user_action = verifyInput(msg, weapon_ids)
 
         if user_action == 'q':
             quit_repair = True
-        elif user_action in weapon_ids:
+        else:
             for item in inventory:
                 if user_action == item['itemId']:
-                    if item['durability'] < item['max durability']:
+                    max_repair = item['max durability'] - item['durability']
+                    # If user has enough money for full repair give them option
+                    if user_stats_dict['currentMoney'] >= max_repair * 25:
+                        msg = "Would you like to repair to max durability?(y/n) "
+                        repairToMax = verifyInput(msg, ['y', 'n'])
+                    else:
+                        repairToMax = 'n'
+                    
+                    if repairToMax == 'y':
+                        item['durability'] = item['max durability']
+                        user_stats_dict['currentMoney'] -= max_repair * 25
+                        print(f"{item['name'].title()} successfully repaired!")
+                        weapon_list.remove(item)
+                        weapon_ids.remove(item['itemId'])
+                        continue
+                    elif repairToMax == 'n':
                         item['durability'] += 1
                         user_stats_dict['currentMoney'] -= 25
                         print(f"{item['name'].title()} successfully repaired!")
-                        if user_stats_dict['currentMoney'] < 25:
-                            quit_repair = True
-                        else:
+                        if item['durability'] == item['max durability']:
+                            weapon_list.remove(item)
+                            weapon_ids.remove(item['itemId'])
                             continue
-                    else:
-                        print("This weapon does not need to be repaired\n")
-        elif user_action not in weapon_ids:
+
+def verifyInput(msg, options):
+    """Function to check for valid input.
+    
+    Parameters:
+        msg (str): The message to be displayed to the user, prompting input.
+        options (list): List of options to check user input against.
+    
+    Returns: 
+        user_input (str): User's input if it matches an option
+    
+    """
+    validInput = False
+    while validInput == False:
+        user_input = input(msg)
+        if user_input in options:
+            validInput = True
+            return user_input
+        else:
             print("Invalid option, please try again\n")
-                    
+
 def sleep(user_stats_dict):
     """Takes user stats and adds 10 HP.
     THIS FUNCTION ALTERS ITS MUTABLE PARAMETERS.
