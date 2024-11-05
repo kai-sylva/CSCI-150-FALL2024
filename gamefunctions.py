@@ -65,6 +65,8 @@ The various functions include...
 
 import random
 from copy import deepcopy
+import json
+import os
 
 def getUserGameOptions():
     """Prints a simple menu of game options to the user. 
@@ -481,6 +483,65 @@ def print_welcome(name="friend", width=20):
     """
     welcome = f'Hello {name}!'
     print(f'{welcome:^{width}}')
+
+def loadFromSave():
+    # FIXME -- docstring
+    with open("user_stats.json", 'r') as file:
+        user_stats = json.load(file)
+    with open("user_inventory.json", 'r') as file:
+        inventory = json.load(file)
+    return user_stats, inventory
+
+def checkSaveExists():
+    # FIXME -- docstring
+    if not os.path.exists("user_stats.json"):
+        print("Starting from new game.\n")
+        return False
+    else:
+        print("1) Start from new game")
+        print("2) Start from save file")
+
+        validInput = False
+        while validInput == False:
+            user_input = input(f"What would you like to do? ")
+            if user_input == '1':
+                return False
+            elif user_input == '2':
+                return True
+            else:
+                print("Invalid option, please try again.")
+
+def saveGame(user_stats, inventory):
+    # FIXME -- docstring
+    with open("user_stats.json", 'w') as file:
+        json.dump(user_stats, file, indent=4)
+    with open("user_inventory.json", 'w') as file:
+        json.dump(inventory, file, indent=4)
+
+def newGameStats():
+    # Get user's name, print welcome
+    user_name = input("What is your name? ")
+    print()
+    print_welcome(user_name, width=0)
+
+    inventory = [
+        {'name': 'health potion', 'price': 50, 'quantity': 1, 'type': 'potion', 
+        'equipped': False, 'itemId': '1'}
+    ]
+
+
+    # Dictionary with user stats
+    user_stats = {
+        'user_name': user_name,
+        'currentHP': 100,
+        'currentMoney': 250,
+        'attack_power': 20,
+        'equipped_weapon': 'None',
+        'weapon_power': 0,
+        'weapon_id': 'None'
+    }
+
+    return user_stats, inventory
 
 def print_shop_menu(shop_items_dict):
     #FIXME -- allow item names longer than 15 characters

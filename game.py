@@ -5,27 +5,11 @@
 
 import gamefunctions
 
-# Get user's name, print welcome
-user_name = input("What is your name? ")
-print()
-gamefunctions.print_welcome(user_name, width=0)
-
-inventory = [
-    {'name': 'health potion', 'price': 50, 'quantity': 1, 'type': 'potion', 
-     'equipped': False, 'itemId': '1'}
-]
-
-
-# Dictionary with user stats
-user_stats = {
-    'user_name': user_name,
-    'currentHP': 100,
-    'currentMoney': 250,
-    'attack_power': 20,
-    'equipped_weapon': 'None',
-    'weapon_power': 0,
-    'weapon_id': 'None'
-}
+# Check if save files exist. If not, new game.
+if gamefunctions.checkSaveExists() == False:
+    user_stats, inventory = gamefunctions.newGameStats()
+else:
+    user_stats, inventory = gamefunctions.loadFromSave()
 
 # Display initial user stats and inventory
 gamefunctions.getUserStats(user_stats)
@@ -72,4 +56,14 @@ while quit_game == False:
         print("Invalid option, please try again\n")
 
 if quit_game == True:
-    print(f"Thanks for playing, {user_name}!")
+    inputValid = False
+    while inputValid == False:
+        saveGame = input("Would you like to save your progress? (y/n) ")
+        if saveGame == 'y':
+            gamefunctions.saveGame(user_stats, inventory)
+            inputValid = True
+        elif saveGame == 'n':
+            print(f"Thanks for playing, {user_stats['user_name']}!")
+            inputValid = True
+        else:
+            print("Invalid option, please try again. ")
