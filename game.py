@@ -1,5 +1,5 @@
 #Kai Rebich - game.py
-#11/4/2024 - CSCI 150
+#11/6/2024 - CSCI 150
 #This file is a simulation of a simple adventure game using the
 #functions imported from gamefunctions.py
 
@@ -30,8 +30,8 @@ shop_items = {
 quit_game = False
 
 while quit_game == False:
-    gamefunctions.getUserGameOptions()
-    user_action = input("\nWhat would you like to do? ")
+    game_options = gamefunctions.getUserGameOptions()
+    user_action = gamefunctions.verifyInput("\nWhat would you like to do? ", game_options)
     if user_action == '1':
         gamefunctions.buyShopItems(user_stats, shop_items, inventory)
     elif user_action == '2':
@@ -52,8 +52,6 @@ while quit_game == False:
         quit_game = True
     elif user_action == 'cheat gold':
         user_stats['currentMoney'] = 1000000
-    else:
-        print("Invalid option, please try again\n")
 
 if quit_game == True:
     msg = "Would you like to save your progress?(y/n) "

@@ -55,10 +55,22 @@ The various functions include...
     HP when user has no health potions or money to buy health potions. 
     Can only be done outside of a fight.
 
+    loadFromSave(): Opens user_stats.json and user_inventory.json and grabs user
+    data, returns as python objects.
+
+    checkSaveExists(): Checks if the correct save files for game.py exist in the 
+    same path as game.py. The files are user_stats.json and user_inventory.json.
+
+    saveGame(): Saves user's stats and inventory to respective json files in the
+    directory they are playing game.py in.
+
+    newGame(): Creates and returns default user stats and inventory. Takes input
+    on user's name.
+
 """
 
 ### Kai Rebich
-### 11/4/2024
+### 11/6/2024
 ### gamefunctions.py
 ### This file is a collection of various functions and project additions
 ### made throughout the course of CSCI 150
@@ -68,14 +80,15 @@ from copy import deepcopy
 import json
 import os
 
-# FIXME -- docstrings, any awkward formatting
-
 def getUserGameOptions():
-    """Prints a simple menu of game options to the user. 
+    """Loops through a list of game options to prints a simple menu of 
+    game options to the user. 
 
     Parameters: none
 
-    Returns: None
+    Returns: 
+        options (list): List of all options (if needed for verifyInput()
+        or other uses)
     """
 
     game_options = [
@@ -91,13 +104,16 @@ def getUserGameOptions():
     ]
 
     option_number = 1
+    options = ['q', 'cheat gold']
 
     for option in range(len(game_options)):
         if game_options[option] == 'Quit game':
             print("q) Quit game")
         else:
             print(f"{option_number}) {game_options[option]}")
+            options.append(str(option_number))
             option_number += 1
+    return options
 
 def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
     """ Returns a tuple containing the number of items purchased, 
@@ -499,7 +515,15 @@ def print_welcome(name="friend", width=20):
     print(f'{welcome:^{width}}')
 
 def loadFromSave():
-    # FIXME -- docstring
+    """Opens user_stats.json and user_inventory.json and grabs user data, returns
+    as python objects.
+    
+    Parameters: None
+
+    Returns:
+        user_stats (dict): Dictionary containing user stats.
+        inventory (list): List of inventory items.
+    """
     with open("user_stats.json", 'r') as file:
         user_stats = json.load(file)
     with open("user_inventory.json", 'r') as file:
@@ -507,7 +531,17 @@ def loadFromSave():
     return user_stats, inventory
 
 def checkSaveExists():
-    # FIXME -- docstring
+    """Checks if the correct save files for game.py exist in the same path
+    as game.py. The files are user_stats.json and user_inventory.json. If 
+    the files exist, takes input on whether user wants to start game from
+    the save files.
+    
+    Parameters: None
+
+    Returns: True if the files exist and user wants to start from those files, 
+    False if they don't exist or user chooses to not load from those files.
+    
+    """
     if not os.path.exists("user_stats.json") and not os.path.exists("user_inventory.json"):
         print("Starting from new game.\n")
         return False
@@ -525,13 +559,31 @@ def checkSaveExists():
             print("Invalid option, please try again.")
 
 def saveGame(user_stats, inventory):
-    # FIXME -- docstring
+    """Saves user's stats and inventory to respective json files in the
+    directory they are playing game.py in.
+    
+    Parameters: None
+
+    Returns: None
+    
+    """
     with open("user_stats.json", 'w') as file:
         json.dump(user_stats, file, indent=4)
     with open("user_inventory.json", 'w') as file:
         json.dump(inventory, file, indent=4)
 
 def newGame():
+    """Creates and returns default user stats and inventory. Takes input on 
+    user's name.
+    
+    Parameters: None
+
+    Retrns:
+        user_stats (dict): Dictionary containing user's stats.
+        inventory (list): List containing default inventory, which is one
+        health potion.
+    """
+
     # Get user's name, print welcome
     user_name = input("What is your name? ")
     print()
