@@ -70,7 +70,7 @@ The various functions include...
 """
 
 ### Kai Rebich
-### 11/6/2024
+### 11/15/2024
 ### gamefunctions.py
 ### This file is a collection of various functions and project additions
 ### made throughout the course of CSCI 150
@@ -572,11 +572,13 @@ def saveGame(user_stats, inventory):
     with open("user_inventory.json", 'w') as file:
         json.dump(inventory, file, indent=4)
 
-def newGame():
+def newGame(default=False):
     """Creates and returns default user stats and inventory. Takes input on 
     user's name.
     
-    Parameters: None
+    Parameters: 
+        default (bool): If set to True, no input is taken from user on their 
+        name and they are given the default name "Adventurer".
 
     Retrns:
         user_stats (dict): Dictionary containing user's stats.
@@ -585,9 +587,13 @@ def newGame():
     """
 
     # Get user's name, print welcome
-    user_name = input("What is your name? ")
-    print()
-    print_welcome(user_name, width=0)
+    # If default set to True, nothing is outputted and default name is set
+    if default == False:
+        user_name = input("What is your name? ")
+        print()
+        print_welcome(user_name, width=0)
+    elif default == True:
+        user_name = "Adventurer"
 
     # Initial inventory
     inventory = [
@@ -633,7 +639,7 @@ def print_shop_menu(shop_items_dict):
         print(f"| {item.title():<15}{details['price']:>8} |")
     print(f'\\{border_dashes}/')
 
-def getUserStats(user_stats_dict):
+def getUserStats(user_stats_dict, display=True):
     """Prints formatted menu of current player stats.
     Mutable parameters are NOT altered.
 
@@ -644,18 +650,22 @@ def getUserStats(user_stats_dict):
             ['attack_power']: User's total attack power
             ['equipped_weapon']: User's currently equipped weapon.
             ['currentMoney']: User's current gold inventory
+        display (bool): If set to True, prints user stats text.
     
     Returns: None
 
     """
-    print(f"""
+    text = f"""
 {'Stats':-^25}
 {'Name:':<7}{user_stats_dict['user_name']:>18}
 {'HP:':<7}{user_stats_dict['currentHP']:>18}
 {'Attack Power:':<15}{user_stats_dict['attack_power']:>10}
 {'Equipped Weapon:':<15}{user_stats_dict['equipped_weapon']:>9}
 {'Gold:':<7}{user_stats_dict['currentMoney']:>18}
-""")
+"""
+    if display == True:
+        print(text)
+    return text
     
 def getUserInventory(inventory, type_name="Type: Not Specified"):
     """Prints a formatted menu of user's inventory items. Type of item(s) should
