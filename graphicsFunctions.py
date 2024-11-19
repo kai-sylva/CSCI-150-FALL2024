@@ -1,4 +1,4 @@
-"""Functions and variables for gameGraphics.py"""
+"""Classes and functions for gameGraphics.py"""
 
 import pygame
 import random
@@ -63,7 +63,14 @@ class Monster():
     
     def move(self):
         """Moves monster within pyGame window, with the small chance of the 
-        monster teleporting (moving 96px instead of 32px)"""
+        monster teleporting (moving 96px instead of 32px)
+        
+        Parameters: 
+            self
+        
+        Returns: None
+        
+        """
         # Generate random direction
         direction = random.randint(1, 4)
         random_teleport = random.randint(1, 100)
@@ -86,7 +93,13 @@ class Monster():
                 self.pos['x_pos'] += distance
     
     def draw(self, screen):
-        """Draws (blits) monster image to the screen"""
+        """Draws (blits) monster image to the screen
+        
+        Parameters:
+            self
+            screen (pygame display): pygame window to blit image on to
+        
+        """
         screen.blit(self.image, (self.pos['x_pos'], self.pos['y_pos']))
     
 class Shop():
@@ -98,11 +111,28 @@ class Shop():
         self.image = pygame.image.load('shop.png')
     
     def draw(self, screen):
-        """Draws (blits) shop image onto the screen"""
+        """Draws (blits) shop image onto the screen
+        
+        Parameters:
+            self
+            screen (pygame display): pygame window to blit image on to
+        
+        Returns: None
+        
+        """
         screen.blit(self.image, (self.pos['x_pos'], self.pos['y_pos']))
     
     def interact(self, user_stats, user_inventory):
-        """Starts a shop interaction"""
+        """Starts a shop interaction
+        
+        Parameters: 
+            Self
+            user_stats (dict): dictionary containing user stats (gold, etc.)
+            user_inventory (dict): dictionary containing user inventory
+        
+        Returns: boolean indicating interaction is finished
+        
+        """
         return gamefunctions.buyShopItems(user_stats, self.items, user_inventory)
     
 
@@ -177,6 +207,16 @@ def drawUser(screen, user_pos):
     )
 
 def drawOverlay(screen, user_pos, image):
+    """Renders an image on top of user's image/rect
+
+    Parameters:
+        screen: the screen/pygame window to blit the image on to
+        user_pos (dict): 2-value dict containning x and y pos on screen
+        image: the image to overlay on top of user
+    
+    Returns: None
+    
+    """
     s = pygame.Surface((32, 32))
     s.set_alpha(64)
     s.blit(image, (0,0))

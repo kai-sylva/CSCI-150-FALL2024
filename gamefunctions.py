@@ -717,7 +717,7 @@ def buyShopItems(user_stats_dict, shop_items_dict, inventory):
         inventory (list): List of nested dictionaries; each dictionary holds 
             information about an item in user's inventory.
     
-    Returns: None
+    Returns: quit_interact (bool) - True if finished with interaction
     """
 
     # Welcome user and print shop menu with the items in shop_items_dict
