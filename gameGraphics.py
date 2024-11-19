@@ -72,7 +72,7 @@ while started == False:
                     # Loads user's stats from json file
                     if highlight == 1:
                         user_stats, inventory = gamefunctions.loadFromSave()
-                        user = User(gamefunctions.loadFromSave())
+                        user = User(user_stats, inventory)
                         started = True
                     # Creates new set of default stats
                     elif highlight == 2:
@@ -96,6 +96,10 @@ while running:
     drawStats(game.screen, game.font, stats, 0, 0)
     main_shop.draw(game.screen)
     drawUser(game.screen, user.pos)
+    # If no monsters exist, create two new ones
+    if len(monsters) == 0:
+        monsters.append(Monster(enderman=True))
+        monsters.append(Monster(enderman=True))
     # Draw each monster onto screen
     for monster in monsters:
         monster.draw(game.screen)
@@ -107,10 +111,8 @@ while running:
             pygame.display.flip()
             result = gamefunctions.fightMonster(user.stats, user.inventory, monster.stats)
             if result == 'victory':
-                # Remove dead monster and add two new monsters to field
+                # Remove dead monster
                 monsters.remove(monster)
-                monsters.append(Monster(enderman=True))
-                monsters.append(Monster(enderman=True))
                 # Reset user position
                 user.pos = {'x_pos': 32, 'y_pos': 128}
             elif result == 'defeat':
