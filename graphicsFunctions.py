@@ -1,6 +1,8 @@
 """Functions and variables for gameGraphics.py"""
 
 import pygame
+import random
+import gamefunctions
 pygame.init()
 
 class MyAdventure():
@@ -13,8 +15,96 @@ class MyAdventure():
         self.screen_w = 384
         self.screen_h = 384
         self.screen = pygame.display.set_mode((self.screen_w, self.screen_h))
-    # Initial user position on screen
-        self.user_pos = {'x_pos': 32, 'y_pos': 128}
+
+class User():
+    """Contains variables and functions relating to the user in gameGraphics.py"""
+    def __init__(self, stats=dict, inventory=dict) -> None:
+        self.pos = {'x_pos': 32, 'y_pos': 128}
+        self.stats = stats
+        self.inventory = inventory
+    
+    def __eq__(self, other):
+        # If user moves over a monster or the shop
+        if self.pos == other.pos:
+            return True
+        else:
+            return False
+    
+    def move(self, x=0, y=0):
+        """Changes user's position values. The current areas available for the user
+        to be positioned are (0-384, 128-384).
+        
+        Parameters:
+            x (int): represents number of pixels to move user on x axis
+            y (int): represents number of pixels to move user on y axis
+        
+        Returns: None
+        """
+        if x != 0:
+            if (self.pos['x_pos'] + x) in range(0, 384):
+                self.pos['x_pos'] += x
+        elif y != 0:
+            if (self.pos['y_pos'] + y) in range(128, 384):
+                self.pos['y_pos'] += y
+
+class Monster():
+    """Contains variables and functions relating to a monster in gameGraphics.py"""
+    def __init__(self, enderman=False) -> None:
+        self.pos = {'x_pos': 192, 'y_pos': 288}
+        # Right now, monster in gameGraphics is always an enderman
+        if enderman:
+            self.image = pygame.image.load('Enderman_icon.png')
+            self.stats = gamefunctions.new_random_monster(enderman=True)
+        else:
+            # FIXME -- change self.image here when introducing new monsters
+            self.image = pygame.image.load('Enderman_icon.png')
+            self.stats = gamefunctions.new_random_monster()
+        
+    
+    def move(self):
+        """Moves monster within pyGame window, with the small chance of the 
+        monster teleporting (moving 96px instead of 32px)"""
+        # Generate random direction
+        direction = random.randint(1, 4)
+        random_teleport = random.randint(1, 100)
+        # Distance to move monster
+        distance = 32
+        if 10 <= random_teleport <= 20:
+            distance *= 3
+        # If direction == 1, move up 32px
+        if direction == 1:
+            if self.pos['y_pos'] - distance in range(128, 384):
+                self.pos['y_pos'] -= distance
+        elif direction == 2:
+            if self.pos['y_pos'] + distance in range(128, 384):
+                self.pos['y_pos'] += distance
+        elif direction == 3:
+            if self.pos['x_pos'] - distance in range(0, 384):
+                self.pos['x_pos'] -= distance
+        elif direction == 4: 
+            if self.pos['x_pos'] + distance in range(0, 384):
+                self.pos['x_pos'] += distance
+    
+    def draw(self, screen):
+        """Draws (blits) monster image to the screen"""
+        screen.blit(self.image, (self.pos['x_pos'], self.pos['y_pos']))
+    
+class Shop():
+    """Contains variables and functions relating to a shop with items available
+    to purchase"""
+    def __init__(self, pos, items) -> None:
+        self.pos = pos
+        self.items = items
+        self.image = pygame.image.load('shop.png')
+    
+    def draw(self, screen):
+        """Draws (blits) shop image onto the screen"""
+        screen.blit(self.image, (self.pos['x_pos'], self.pos['y_pos']))
+    
+    def interact(self, user_stats, user_inventory):
+        """Starts a shop interaction"""
+        return gamefunctions.buyShopItems(user_stats, self.items, user_inventory)
+    
 
 def drawStats(screen, font, stats, x, y):
     """Renders image of user's stats and blits them to the pyGame screen.
@@ -71,26 +161,6 @@ def drawOptions(screen, font, text, x, y, highlight=1):
                 screen.blit(text_image, (x,y+(16*i)))
             i += 1
 
-def moveUser(user_pos, x=0, y=0):
-    """Changes user's position values. The current areas available for the user
-    to be positioned are (0-384, 128-384).
-    
-    Parameters:
-        user_pos (dict):
-            x_pos: user's position on x axis
-            y_pos: user's position on y axis
-        x (int): represents number of pixels to move user on x axis
-        y (int): represents number of pixels to move user on y axis
-    
-    Returns: None
-    """
-    if x != 0:
-        if (user_pos['x_pos'] + x) in range(0, 384):
-            user_pos['x_pos'] += x
-    elif y != 0:
-        if (user_pos['y_pos'] + y) in range(128, 384):
-            user_pos['y_pos'] += y
-
 def drawUser(screen, user_pos):
     """Render's the user (currently drawn as a rectangle)
 
@@ -106,7 +176,13 @@ def drawUser(screen, user_pos):
         rect = (user_pos['x_pos'], user_pos['y_pos'], 32, 32)
     )
 
-def drawShop(screen):
+def drawOverlay(screen, user_pos, image):
+    s = pygame.Surface((32, 32))
+    s.set_alpha(64)
+    s.blit(image, (0,0))
+    screen.blit(s, (user_pos['x_pos'], user_pos['y_pos']))
+
+def drawShop(screen, pos):
     """Draws a cute little green circle representing the shop.
     
     Parameters:
@@ -116,7 +192,7 @@ def drawShop(screen):
     """
     pygame.draw.circle(
         screen, color = (34, 139, 34),
-        center = ((272, 176)),
+        center = (pos),
         radius = (16)
     )
 

@@ -1,5 +1,5 @@
 ### Kai Rebich
-### 11/15/2024
+### 11/18/2024
 ### gameGraphics.py
 ### A version of game.py that utilizes pyGame for graphics
 
@@ -24,6 +24,22 @@ else:
     "2) New Game"]
     highlight = 1
 
+# Dictionary with main shop items
+shop_items = {
+    'health potion': {'price': 50, 'quantity': 1, 'type': 'potion', 
+                      'name': 'health potion', 'equipped': False},
+    'sword': {'price': 100, 'quantity': 'single', 'type': 'weapon', 'durability': 5, 
+              'max durability': 10, 'attack power': 500, 'name': 'sword',
+              'equipped': False},
+    'instakill': {'price': 100, 'quantity': 1, 'type': 'spell',
+                        'name': 'instakill', 'equipped': False}, 
+    'shield': {'price': 200, 'quantity': 'single', 'type': 'shield', 'durability': 10,
+               'max durability': 20, 'defense power': 10, 'name': 'shield'}
+}
+
+shop_pos = {'x_pos': 256, 'y_pos': 160}
+main_shop = Shop(shop_pos, shop_items)
+
 # Initial screen
 started = False
 while started == False:
@@ -38,6 +54,7 @@ while started == False:
                 exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                 user_stats, inventory = gamefunctions.newGame(default=True)
+                user = User(user_stats, inventory)
                 started = True
     # If save files exist, give user option to load from save or start new
     else: 
@@ -55,22 +72,60 @@ while started == False:
                     # Loads user's stats from json file
                     if highlight == 1:
                         user_stats, inventory = gamefunctions.loadFromSave()
+                        user = User(gamefunctions.loadFromSave())
                         started = True
                     # Creates new set of default stats
                     elif highlight == 2:
                         user_stats, inventory = gamefunctions.newGame(default=True)
+                        user = User(user_stats, inventory)
                         started = True
     clock.tick(60)
     pygame.display.flip()
 
+# Initialize list of monsters on screen
+monsters = []
+monsters.append(Monster(enderman=True))
+
 # Main game loop
+# track user movement (for monster movement)
+move_iter = 1
 running = True
 while running:
     game.screen.fill((50, 50, 50))
-    stats = gamefunctions.getUserStats(user_stats, display=False)
+    stats = gamefunctions.getUserStats(user.stats, display=False)
     drawStats(game.screen, game.font, stats, 0, 0)
-    drawUser(game.screen, game.user_pos)
-    drawShop(game.screen)
+    main_shop.draw(game.screen)
+    drawUser(game.screen, user.pos)
+    # Draw each monster onto screen
+    for monster in monsters:
+        monster.draw(game.screen)
+    # Check for user interacting with monster
+    for monster in monsters:
+        if user.pos == monster.pos:
+            drawUser(game.screen, user.pos)
+            drawOverlay(game.screen, user.pos, monster.image)
+            pygame.display.flip()
+            result = gamefunctions.fightMonster(user.stats, user.inventory, monster.stats)
+            if result == 'victory':
+                # Remove dead monster and add two new monsters to field
+                monsters.remove(monster)
+                monsters.append(Monster(enderman=True))
+                monsters.append(Monster(enderman=True))
+                # Reset user position
+                user.pos = {'x_pos': 32, 'y_pos': 128}
+            elif result == 'defeat':
+                user.pos = {'x_pos': 32, 'y_pos': 128}
+            elif result == 'quit':
+                user.pos = {'x_pos': 32, 'y_pos': 128}
+
+    # Check for user interacting with shop
+    if user.pos == main_shop.pos:
+        drawUser(game.screen, user.pos)
+        drawOverlay(game.screen, user.pos, main_shop.image)
+        pygame.display.flip()
+        quit_interact = main_shop.interact(user.stats, user.inventory)
+        if quit_interact == True:
+            user.pos['x_pos'] -= 32
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -79,25 +134,35 @@ while running:
         elif event.type == pygame.KEYDOWN:
             # Move user down 32 pixels
             if event.key == pygame.K_s or event.key == pygame.K_DOWN:
-                moveUser(game.user_pos, y=32)
+                move_iter += 1
+                user.move(y=32)
             # ... up 32 pixels
             elif event.key == pygame.K_w or event.key == pygame.K_UP:
-                moveUser(game.user_pos, y=-32)
+                move_iter += 1
+                user.move(y=-32)
             # ... right 32 pixels
             elif event.key == pygame.K_d or event.key == pygame.K_RIGHT:
-                moveUser(game.user_pos, x=32)
+                move_iter += 1
+                user.move(x=32)
             # ... left 32 pixels
             elif event.key == pygame.K_a or event.key == pygame.K_LEFT:
-                moveUser(game.user_pos, x=-32)
+                move_iter += 1
+                user.move(x=-32)
             # a second way to end the game
             elif event.key == pygame.K_q:
                 running = False
+    
+    # Move monster(s) every time move_iter is 3 and reset move_iter
+    if move_iter % 3 == 0:
+        for monster in monsters:
+            monster.move()
+        move_iter = 1
     clock.tick(60)
     pygame.display.flip()
 
 # If user ends game with 'q', give option to save stats
 save_selection = saveGame(game.screen, game.font)
 if save_selection == 1:
-    gamefunctions.saveGame(user_stats, inventory)
+    gamefunctions.saveGame(user.stats, inventory)
 
 pygame.quit()

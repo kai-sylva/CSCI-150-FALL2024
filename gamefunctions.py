@@ -151,7 +151,7 @@ def purchase_item(itemPrice, startingMoney, quantityToPurchase=1):
         notEnoughMoney = False
         return int(quantityToPurchase), leftoverMoney, notEnoughMoney
 
-def new_random_monster():
+def new_random_monster(enderman=False):
     """Returns a dictionary of a random monster with random health, power,
     and money attributes.
 
@@ -167,30 +167,37 @@ def new_random_monster():
 
     monster = {}
     # random number generator
-    randomNumber = random.randint(1, 3) 
+    randomNumber = random.randint(1, 3)
 
-    if randomNumber == 1:
-        monster['name'] = "goblin"
-        monster['description'] = """This is a lone goblin. When it notices you,"
+    if enderman:
+        monster['name'] = 'enderman'
+        monster['description'] = ''
+        monster['health'] = 2000
+        monster['money'] = random.randint(200, 10000)
+        monster['power'] = 100
+    else:
+        if randomNumber == 1:
+            monster['name'] = "goblin"
+            monster['description'] = """This is a lone goblin. When it notices you,"
 it rushes at you quickly with a dagger that could be mistaken for a butter knife."""
-        monster['health'] = random.randint(5, 12)
-        monster['power'] = random.randint(1, 5)
-        monster['money'] = random.randint(1, 50)
-    elif randomNumber == 2:
-        monster['name'] = "dragon"
-        monster['description'] = """You hear the terrible cry of a hungry dragon 
+            monster['health'] = random.randint(5, 12)
+            monster['power'] = random.randint(1, 5)
+            monster['money'] = random.randint(1, 50)
+        elif randomNumber == 2:
+            monster['name'] = "dragon"
+            monster['description'] = """You hear the terrible cry of a hungry dragon 
 emerging from a nearby cave. Good luck."""
-        monster['health'] = random.randint(5000, 20000)
-        monster['power'] = random.randint(125, 250)
-        monster['money'] = random.randint(3000, 12000)
-    elif randomNumber == 3:
-        monster['name'] = "frost troll"
-        monster['description'] = """As you continue your quest to find treasure at
+            monster['health'] = random.randint(5000, 20000)
+            monster['power'] = random.randint(125, 250)
+            monster['money'] = random.randint(3000, 12000)
+        elif randomNumber == 3:
+            monster['name'] = "frost troll"
+            monster['description'] = """As you continue your quest to find treasure at
 the top of a mountain with eternal blizzards you encounter 
 a frost troll guarding a suspicious chest."""
-        monster['health'] = random.randint(2000, 3000)
-        monster['power'] = random.randint(50, 80)
-        monster['money'] = random.randint(5000, 7000)
+            monster['health'] = random.randint(2000, 3000)
+            monster['power'] = random.randint(50, 80)
+            monster['money'] = random.randint(5000, 7000)
     return monster
 
 def fightMonster(user_stats_dict, inventory, monster={}):
@@ -205,7 +212,10 @@ def fightMonster(user_stats_dict, inventory, monster={}):
         monster (dict): Dictionary containing monster stats. If no value is
             passed, a random monster is generated.
     
-    Returns: None
+    Returns: 
+        result (str): result of the fight. 'quit' when running away, 'victory'
+            when the dragon is slain, 'defeat' when the user's health falls
+            too low. *Used in gameGraphics.py*
 
     Special Notes:
         User Actions:
@@ -236,7 +246,7 @@ def fightMonster(user_stats_dict, inventory, monster={}):
         user_action = input("Choose your action: ")
         print("")
         if user_action == '1':
-            quit_fight = attackMonster(user_stats_dict, inventory, monster)
+            quit_fight, result = attackMonster(user_stats_dict, inventory, monster)
         elif user_action == '2':
             equipWeapon(user_stats_dict, inventory)
             displayFightStats(user_stats_dict, monster)
@@ -246,15 +256,18 @@ def fightMonster(user_stats_dict, inventory, monster={}):
         elif user_action == '4':
             print("You ran away!")
             getUserStats(user_stats_dict)
+            result = "quit"
             quit_fight = True
         elif user_action == '5':
-            quit_fight = attackMonster(user_stats_dict, inventory, monster, instakill=True)
+            quit_fight, result = attackMonster(user_stats_dict, inventory, monster, instakill=True)
         elif user_action == 'cheat':
-            quit_fight = attackMonster(user_stats_dict, inventory, monster, cheat=True)
+            quit_fight, result = attackMonster(user_stats_dict, inventory, monster, cheat=True)
         else:
             print("Invalid option, please try again.")
+    return result
 
 def attackMonster(user_stats_dict, inventory, monster, cheat=False, instakill=False):
+    # FIXME -- update docstring return value
     """User attacks monster, dealing damage to the monster's HP equal to the 
         user's attack power. Attack power is a combination of the user's base 
         power and weapon power IF their equipped weapon is not broken. Monster 
@@ -284,14 +297,14 @@ def attackMonster(user_stats_dict, inventory, monster, cheat=False, instakill=Fa
                 if item['quantity'] < 1:
                     print("You have no more instakill spells remaining.")
                     displayFightStats(user_stats_dict, monster)
-                    return False
+                    return False, ''
                 else:
                     item['quantity'] -= 1
                     print(f"You have slain the {monster['name']} with an instakill spell!")
                     print(f"Gold acquired: {monster['money']}")
                     user_stats_dict['currentMoney'] += monster['money']
                     getUserStats(user_stats_dict)
-                    return True
+                    return True, 'victory'
             else:
                 continue
         print("You have no instakill spells.")
@@ -302,7 +315,7 @@ def attackMonster(user_stats_dict, inventory, monster, cheat=False, instakill=Fa
         print(f"Gold acquired: {monster['money']}")
         user_stats_dict['currentMoney'] += monster['money']
         getUserStats(user_stats_dict)
-        return True
+        return True, 'victory'
     elif cheat == False:
         print("You chose to fight!\n")
 
@@ -345,13 +358,13 @@ def attackMonster(user_stats_dict, inventory, monster, cheat=False, instakill=Fa
             print(f"Gold acquired: {monster['money']}")
             user_stats_dict['currentMoney'] += monster['money']
             getUserStats(user_stats_dict)
-            return True
+            return True, 'victory'
         elif user_stats_dict['currentHP'] == 0:
             print("Your HP has fallen to 0 and you have been defeated.")
             print("You must run away and sleep to regenerate health.\n")
-            return True
+            return True, 'defeat'
         else:
-            return False
+            return False, ''
 
 def equipWeapon(user_stats_dict, inventory):
     """Allows user to equip a weapon from their inventory.
@@ -595,10 +608,14 @@ def newGame(default=False):
     elif default == True:
         user_name = "Adventurer"
 
+
     # Initial inventory
     inventory = [
         {'name': 'health potion', 'price': 50, 'quantity': 1, 'type': 'potion', 
-        'equipped': False, 'itemId': '1'}
+        'equipped': False, 'itemId': '1'}, 
+        {"name": "sword", "price": 100, "quantity": "single", "type": "weapon", 
+        "durability": 5, "max durability": 10, "attack power": 500,
+        "equipped": True, "itemId": "2"}
     ]
 
 
@@ -607,10 +624,10 @@ def newGame(default=False):
         'user_name': user_name,
         'currentHP': 100,
         'currentMoney': 250,
-        'attack_power': 20,
-        'equipped_weapon': 'None',
-        'weapon_power': 0,
-        'weapon_id': 'None'
+        'attack_power': 520,
+        'equipped_weapon': 'sword',
+        'weapon_power': 500,
+        'weapon_id': '2'
     }
 
     return user_stats, inventory
@@ -714,6 +731,7 @@ def buyShopItems(user_stats_dict, shop_items_dict, inventory):
         item = input("What would you like to buy?('q' to leave) ")
         if item == 'q':
             print("")
+
             quit_interact = True
         elif item not in shop_items_dict:
             print("Invalid option, please try again")
@@ -750,6 +768,7 @@ Remaining gold: {transaction[1]}""")
             else:
                 print(f"""\nQuantity purchased: {transaction[0]}
 Remaining gold: {transaction[1]}""")
+    return quit_interact
                 
 def addToInventory(item, inventory, quantity):
     """Adds an item to the user's inventory. If an item requires a new itemId,
