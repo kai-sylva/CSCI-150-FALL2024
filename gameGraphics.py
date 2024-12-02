@@ -1,5 +1,5 @@
 ### Kai Rebich
-### 11/18/2024
+### 12/2/2024
 ### gameGraphics.py
 ### A version of game.py that utilizes pyGame for graphics
 
@@ -38,7 +38,7 @@ shop_items = {
 }
 
 shop_pos = {'x_pos': 256, 'y_pos': 160}
-main_shop = Shop(shop_pos, shop_items)
+main_shop = Shop(shop_pos, shop_items, game.screen)
 
 # Initial screen
 started = False
@@ -95,7 +95,7 @@ while running:
     stats = gamefunctions.getUserStats(user.stats, display=False)
     drawStats(game.screen, game.font, stats, 0, 0)
     main_shop.draw(game.screen)
-    drawUser(game.screen, user.pos)
+    user.draw(game.screen)
     # If no monsters exist, create two new ones
     if len(monsters) == 0:
         monsters.append(Monster(enderman=True))
@@ -106,7 +106,7 @@ while running:
     # Check for user interacting with monster
     for monster in monsters:
         if user.pos == monster.pos:
-            drawUser(game.screen, user.pos)
+            user.draw(game.screen)
             drawOverlay(game.screen, user.pos, monster.image)
             pygame.display.flip()
             result = gamefunctions.fightMonster(user.stats, user.inventory, monster.stats)
@@ -122,7 +122,7 @@ while running:
 
     # Check for user interacting with shop
     if user.pos == main_shop.pos:
-        drawUser(game.screen, user.pos)
+        user.draw(game.screen)
         drawOverlay(game.screen, user.pos, main_shop.image)
         pygame.display.flip()
         quit_interact = main_shop.interact(user.stats, user.inventory)

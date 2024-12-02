@@ -309,7 +309,7 @@ def attackMonster(user_stats_dict, inventory, monster, cheat=False, instakill=Fa
                 continue
         print("You have no instakill spells.")
         displayFightStats(user_stats_dict, monster)
-        return False
+        return False, ''
     elif cheat == True:
         print(f"You have slain the {monster['name']}!")
         print(f"Gold acquired: {monster['money']}")

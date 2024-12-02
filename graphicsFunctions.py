@@ -22,6 +22,12 @@ class User():
         self.pos = {'x_pos': 32, 'y_pos': 128}
         self.stats = stats
         self.inventory = inventory
+        try:
+            self.image = pygame.image.load("user.png")
+            self.valid_image = True
+        except:
+            self.image = pygame.Surface((32,32))
+            self.valid_image = False
     
     def __eq__(self, other):
         # If user moves over a monster or the shop
@@ -46,6 +52,24 @@ class User():
         elif y != 0:
             if (self.pos['y_pos'] + y) in range(128, 384):
                 self.pos['y_pos'] += y
+    
+    def draw(self, screen):
+        """Draws (blits) user image onto the screen
+        
+        Parameters:
+            self
+            screen (pygame display): pygame window to blit image on to
+        
+        Returns: None
+        
+        """
+        if self.valid_image:
+            screen.blit(self.image, (self.pos['x_pos'], self.pos['y_pos']))
+        else:
+            pygame.draw.rect(
+        screen, color = (255,255,255),
+        rect=(self.pos['x_pos'], self.pos['y_pos'], 32, 32)
+        )
 
 class Monster():
     """Contains variables and functions relating to a monster in gameGraphics.py"""
@@ -53,7 +77,12 @@ class Monster():
         self.pos = {'x_pos': 192, 'y_pos': 288}
         # Right now, monster in gameGraphics is always an enderman
         if enderman:
-            self.image = pygame.image.load('Enderman_icon.png')
+            try:
+                self.image = pygame.image.load('Enderman_icon.png')
+                self.valid_image = True
+            except:
+                self.image = pygame.Surface((32,32))
+                self.valid_image = False
             self.stats = gamefunctions.new_random_monster(enderman=True)
         else:
             # FIXME -- change self.image here when introducing new monsters
@@ -100,15 +129,26 @@ class Monster():
             screen (pygame display): pygame window to blit image on to
         
         """
-        screen.blit(self.image, (self.pos['x_pos'], self.pos['y_pos']))
+        if self.valid_image:
+            screen.blit(self.image, (self.pos['x_pos'], self.pos['y_pos']))
+        else:
+            pygame.draw.rect(
+                screen, (255,0,0),
+                rect=(self.pos['x_pos'], self.pos['y_pos'], 32, 32)
+            )
     
 class Shop():
     """Contains variables and functions relating to a shop with items available
     to purchase"""
-    def __init__(self, pos, items) -> None:
+    def __init__(self, pos, items, screen) -> None:
         self.pos = pos
         self.items = items
-        self.image = pygame.image.load('shop.png')
+        try:
+            self.image = pygame.image.load('shop.png')
+            self.valid_image = True
+        except:
+            self.image = pygame.Surface((32,32))
+            self.valid_image = False
     
     def draw(self, screen):
         """Draws (blits) shop image onto the screen
@@ -120,7 +160,14 @@ class Shop():
         Returns: None
         
         """
-        screen.blit(self.image, (self.pos['x_pos'], self.pos['y_pos']))
+        if self.valid_image:
+            screen.blit(self.image, (self.pos['x_pos'], self.pos['y_pos']))
+        else:
+            pygame.draw.circle(
+        screen, color = (34, 139, 34),
+        center = ((272, 176)),
+        radius = (16)
+        )
     
     def interact(self, user_stats, user_inventory):
         """Starts a shop interaction
